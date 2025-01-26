@@ -67,12 +67,24 @@ const locations = [
     }
 ];
 
-// Add markers to the map
+// Add markers to the map with click handlers
 locations.forEach(location => {
-    new mapboxgl.Marker()
+    const marker = new mapboxgl.Marker()
         .setLngLat(location.coordinates)
         .setPopup(new mapboxgl.Popup().setHTML(`<h3>${location.name}</h3>`))
         .addTo(map);
+
+    // Add click handler to marker
+    marker.getElement().addEventListener('click', () => {
+        map.flyTo({
+            center: location.coordinates,
+            zoom: 18,
+            pitch: 75,
+            bearing: Math.random() * 360, // Random viewing angle
+            duration: 2000, // Animation duration in milliseconds
+            essential: true
+        });
+    });
 });
 
 // Handle AR mode
@@ -83,9 +95,13 @@ const uiContainer = document.getElementById('ui-container');
 let isDrawing = false;
 let currentStroke = {
     points: [],
-    color: '#FF1493', // Hot pink color
+    color: '#FF1493',
     width: 0.02
 };
+
+let camera;
+let raycaster;
+let drawingDistance = 3; // Default drawing distance in meters
 
 startARButton.addEventListener('click', () => {
     uiContainer.style.display = 'none';
@@ -106,8 +122,15 @@ startARButton.addEventListener('click', () => {
 });
 
 function initAR() {
-    const camera = document.querySelector('[gps-camera]');
+    camera = document.querySelector('[gps-camera]');
+    raycaster = new THREE.Raycaster();
     const drawingsContainer = document.getElementById('drawings');
+
+    // Initialize AR scene
+    const scene = document.querySelector('a-scene');
+    scene.addEventListener('loaded', () => {
+        console.log('AR Scene loaded');
+    });
 
     navigator.geolocation.getCurrentPosition(position => {
         console.log('User position:', position.coords.latitude, position.coords.longitude);
@@ -123,7 +146,7 @@ function startDrawing(event) {
     currentStroke = {
         points: [],
         color: getRandomPinkShade(),
-        width: Math.random() * 0.03 + 0.01 // Random width between 0.01 and 0.04
+        width: Math.random() * 0.03 + 0.01
     };
     const touch = event.touches[0];
     addPoint(touch);
@@ -158,27 +181,40 @@ function endDrawing() {
 }
 
 function addPoint(touch) {
-    const point = {
-        x: (touch.clientX / window.innerWidth) * 2 - 1,
-        y: -(touch.clientY / window.innerHeight) * 2 + 1,
-        z: -1 + Math.random() * 0.2 // Add some depth variation
-    };
+    // Convert touch coordinates to normalized device coordinates
+    const ndcX = (touch.clientX / window.innerWidth) * 2 - 1;
+    const ndcY = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+    // Get camera direction
+    const cameraEl = document.querySelector('[gps-camera]');
+    const cameraObject3D = cameraEl.object3D;
+    const cameraPosition = new THREE.Vector3();
+    const cameraDirection = new THREE.Vector3();
+    
+    cameraObject3D.getWorldPosition(cameraPosition);
+    cameraObject3D.getWorldDirection(cameraDirection);
+
+    // Calculate point position based on camera direction
+    const point = new THREE.Vector3(
+        cameraPosition.x + cameraDirection.x * drawingDistance + ndcX,
+        cameraPosition.y + cameraDirection.y * drawingDistance + ndcY,
+        cameraPosition.z + cameraDirection.z * drawingDistance
+    );
+
     currentStroke.points.push(point);
 }
 
 function createCurvedLine(points, color, width) {
     if (points.length < 2) return;
 
-    const curve = new THREE.CatmullRomCurve3(
-        points.map(p => new THREE.Vector3(p.x, p.y, p.z))
-    );
+    const curve = new THREE.CatmullRomCurve3(points);
 
     const geometry = new THREE.TubeGeometry(
         curve,
-        points.length * 3, // segments
+        points.length * 3,
         width,
-        8, // radiusSegments
-        false // closed
+        8,
+        false
     );
 
     const material = new THREE.MeshStandardMaterial({
