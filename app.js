@@ -101,7 +101,7 @@ let currentStroke = {
 
 let camera;
 let raycaster;
-let drawingDistance = 0.5; // Default drawing distance in meters
+let drawingDistance = -1; // Default drawing distance in meters
 
 startARButton.addEventListener('click', () => {
     uiContainer.style.display = 'none';
