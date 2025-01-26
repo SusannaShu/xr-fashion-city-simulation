@@ -1,53 +1,79 @@
-// Initialize locations
+// Mapbox access token
+mapboxgl.accessToken = 'pk.eyJ1Ijoic3VzYW5uYXNodSIsImEiOiJjbTZkajNkbWYwb3EyMmlxczdpeDljamxtIn0.0UgPtm1Ag2ai0QbmRszBBg';
+
+// Initialize map centered on Paris
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v11',
+    center: [2.3522, 48.8566], // Paris coordinates
+    zoom: 15,
+    pitch: 60, // Tilt the map for 3D view
+    bearing: -30,
+    antialias: true
+});
+
+// Add 3D buildings layer
+map.on('style.load', () => {
+    // Add 3D building layer
+    map.addLayer({
+        'id': '3d-buildings',
+        'source': 'composite',
+        'source-layer': 'building',
+        'filter': ['==', 'extrude', 'true'],
+        'type': 'fill-extrusion',
+        'minzoom': 15,
+        'paint': {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'height']
+            ],
+            'fill-extrusion-base': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'min_height']
+            ],
+            'fill-extrusion-opacity': 0.6
+        }
+    });
+
+    // Fly to Palais Royal
+    map.flyTo({
+        center: [2.3376, 48.8642],
+        zoom: 17,
+        pitch: 60,
+        bearing: -30
+    });
+});
+
+// Add markers for our locations of interest
 const locations = [
     {
         name: 'Palais Royal',
-        coordinates: [48.8642, 2.3376]
+        coordinates: [2.3376, 48.8642]
     },
     {
         name: 'Centre Pompidou',
-        coordinates: [48.8606, 2.3522]
+        coordinates: [2.3522, 48.8606]
     }
 ];
 
-// Initialize Google Earth
-let ge;
-google.load("earth", "1");
-
-function init() {
-    google.earth.createInstance('map', initCallback, failureCallback);
-}
-
-function initCallback(instance) {
-    ge = instance;
-    ge.getWindow().setVisibility(true);
-    
-    // Set initial view to Paris
-    const lookAt = ge.createLookAt('');
-    lookAt.setLatitude(48.8566);
-    lookAt.setLongitude(2.3522);
-    lookAt.setRange(2000); // Zoom level
-    lookAt.setTilt(45); // Tilt for 3D view
-    lookAt.setHeading(0);
-    ge.getView().setAbstractView(lookAt);
-
-    // Add place markers
-    locations.forEach(location => {
-        const placemark = ge.createPlacemark('');
-        placemark.setName(location.name);
-        
-        const point = ge.createPoint('');
-        point.setLatitude(location.coordinates[0]);
-        point.setLongitude(location.coordinates[1]);
-        placemark.setGeometry(point);
-        
-        ge.getFeatures().appendChild(placemark);
-    });
-}
-
-function failureCallback(error) {
-    console.error('Failed to initialize Google Earth:', error);
-}
+// Add markers to the map
+locations.forEach(location => {
+    new mapboxgl.Marker()
+        .setLngLat(location.coordinates)
+        .setPopup(new mapboxgl.Popup().setHTML(`<h3>${location.name}</h3>`))
+        .addTo(map);
+});
 
 // Handle AR mode
 const startARButton = document.getElementById('start-ar');
@@ -85,14 +111,6 @@ function initAR() {
 
     navigator.geolocation.getCurrentPosition(position => {
         console.log('User position:', position.coords.latitude, position.coords.longitude);
-        
-        // Update Google Earth view to match AR position
-        const lookAt = ge.createLookAt('');
-        lookAt.setLatitude(position.coords.latitude);
-        lookAt.setLongitude(position.coords.longitude);
-        lookAt.setRange(100); // Close-up view
-        lookAt.setTilt(90); // Looking straight ahead
-        ge.getView().setAbstractView(lookAt);
     });
 
     document.addEventListener('touchstart', startDrawing);
@@ -175,7 +193,4 @@ function createCurvedLine(points, color, width) {
     const entity = document.createElement('a-entity');
     entity.setObject3D('mesh', mesh);
     document.querySelector('#drawings').appendChild(entity);
-}
-
-// Initialize Google Earth when the page loads
-google.setOnLoadCallback(init);
+} 
