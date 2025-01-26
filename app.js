@@ -1,33 +1,53 @@
-// Replace with your Mapbox access token
-mapboxgl.accessToken = 'YOUR_MAPBOX_TOKEN';
-
-// Initialize map centered on Paris
-const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/light-v11',
-    center: [2.3522, 48.8566], // Paris coordinates
-    zoom: 12
-});
-
-// Add markers for our locations of interest
+// Initialize locations
 const locations = [
     {
         name: 'Palais Royal',
-        coordinates: [2.3376, 48.8642]
+        coordinates: [48.8642, 2.3376]
     },
     {
         name: 'Centre Pompidou',
-        coordinates: [2.3522, 48.8606]
+        coordinates: [48.8606, 2.3522]
     }
 ];
 
-// Add markers to the map
-locations.forEach(location => {
-    new mapboxgl.Marker()
-        .setLngLat(location.coordinates)
-        .setPopup(new mapboxgl.Popup().setHTML(`<h3>${location.name}</h3>`))
-        .addTo(map);
-});
+// Initialize Google Earth
+let ge;
+google.load("earth", "1");
+
+function init() {
+    google.earth.createInstance('map', initCallback, failureCallback);
+}
+
+function initCallback(instance) {
+    ge = instance;
+    ge.getWindow().setVisibility(true);
+    
+    // Set initial view to Paris
+    const lookAt = ge.createLookAt('');
+    lookAt.setLatitude(48.8566);
+    lookAt.setLongitude(2.3522);
+    lookAt.setRange(2000); // Zoom level
+    lookAt.setTilt(45); // Tilt for 3D view
+    lookAt.setHeading(0);
+    ge.getView().setAbstractView(lookAt);
+
+    // Add place markers
+    locations.forEach(location => {
+        const placemark = ge.createPlacemark('');
+        placemark.setName(location.name);
+        
+        const point = ge.createPoint('');
+        point.setLatitude(location.coordinates[0]);
+        point.setLongitude(location.coordinates[1]);
+        placemark.setGeometry(point);
+        
+        ge.getFeatures().appendChild(placemark);
+    });
+}
+
+function failureCallback(error) {
+    console.error('Failed to initialize Google Earth:', error);
+}
 
 // Handle AR mode
 const startARButton = document.getElementById('start-ar');
@@ -35,14 +55,16 @@ const arScene = document.getElementById('ar-scene');
 const uiContainer = document.getElementById('ui-container');
 
 let isDrawing = false;
-let currentLine = [];
+let currentStroke = {
+    points: [],
+    color: '#FF1493', // Hot pink color
+    width: 0.02
+};
 
 startARButton.addEventListener('click', () => {
-    // Hide map UI and show AR scene
     uiContainer.style.display = 'none';
     arScene.style.display = 'block';
     
-    // Request device orientation and geolocation permissions
     if (typeof DeviceOrientationEvent !== 'undefined' && 
         typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
@@ -58,16 +80,21 @@ startARButton.addEventListener('click', () => {
 });
 
 function initAR() {
-    // Initialize AR drawing functionality
     const camera = document.querySelector('[gps-camera]');
     const drawingsContainer = document.getElementById('drawings');
 
-    // Get user's current position
     navigator.geolocation.getCurrentPosition(position => {
         console.log('User position:', position.coords.latitude, position.coords.longitude);
+        
+        // Update Google Earth view to match AR position
+        const lookAt = ge.createLookAt('');
+        lookAt.setLatitude(position.coords.latitude);
+        lookAt.setLongitude(position.coords.longitude);
+        lookAt.setRange(100); // Close-up view
+        lookAt.setTilt(90); // Looking straight ahead
+        ge.getView().setAbstractView(lookAt);
     });
 
-    // Add touch event listeners for drawing
     document.addEventListener('touchstart', startDrawing);
     document.addEventListener('touchmove', draw);
     document.addEventListener('touchend', endDrawing);
@@ -75,45 +102,80 @@ function initAR() {
 
 function startDrawing(event) {
     isDrawing = true;
-    currentLine = [];
-    // Convert touch position to 3D coordinates
+    currentStroke = {
+        points: [],
+        color: getRandomPinkShade(),
+        width: Math.random() * 0.03 + 0.01 // Random width between 0.01 and 0.04
+    };
     const touch = event.touches[0];
     addPoint(touch);
+}
+
+function getRandomPinkShade() {
+    const pinkShades = [
+        '#FF1493', // Deep pink
+        '#FF69B4', // Hot pink
+        '#FFB6C1', // Light pink
+        '#FF82AB', // Pale violet red
+        '#FF34B3'  // Rose pink
+    ];
+    return pinkShades[Math.floor(Math.random() * pinkShades.length)];
 }
 
 function draw(event) {
     if (!isDrawing) return;
     const touch = event.touches[0];
     addPoint(touch);
+    if (currentStroke.points.length >= 2) {
+        createCurvedLine(currentStroke.points, currentStroke.color, currentStroke.width);
+    }
 }
 
 function endDrawing() {
     isDrawing = false;
-    if (currentLine.length > 1) {
-        // Create 3D line from points
-        createLine(currentLine);
+    if (currentStroke.points.length >= 2) {
+        createCurvedLine(currentStroke.points, currentStroke.color, currentStroke.width);
     }
-    currentLine = [];
+    currentStroke.points = [];
 }
 
 function addPoint(touch) {
-    // Convert 2D touch coordinates to 3D world coordinates
-    // This is a simplified version - you'll need to implement proper coordinate conversion
     const point = {
         x: (touch.clientX / window.innerWidth) * 2 - 1,
         y: -(touch.clientY / window.innerHeight) * 2 + 1,
-        z: -1 // Fixed distance from camera
+        z: -1 + Math.random() * 0.2 // Add some depth variation
     };
-    currentLine.push(point);
+    currentStroke.points.push(point);
 }
 
-function createLine(points) {
-    // Create a new line entity in AR
-    const line = document.createElement('a-entity');
-    line.setAttribute('line', {
-        start: points[0],
-        end: points[points.length - 1],
-        color: '#FF0000'
+function createCurvedLine(points, color, width) {
+    if (points.length < 2) return;
+
+    const curve = new THREE.CatmullRomCurve3(
+        points.map(p => new THREE.Vector3(p.x, p.y, p.z))
+    );
+
+    const geometry = new THREE.TubeGeometry(
+        curve,
+        points.length * 3, // segments
+        width,
+        8, // radiusSegments
+        false // closed
+    );
+
+    const material = new THREE.MeshStandardMaterial({
+        color: color,
+        metalness: 0.5,
+        roughness: 0.5,
+        emissive: color,
+        emissiveIntensity: 0.2
     });
-    document.querySelector('#drawings').appendChild(line);
-} 
+
+    const mesh = new THREE.Mesh(geometry, material);
+    const entity = document.createElement('a-entity');
+    entity.setObject3D('mesh', mesh);
+    document.querySelector('#drawings').appendChild(entity);
+}
+
+// Initialize Google Earth when the page loads
+google.setOnLoadCallback(init);
