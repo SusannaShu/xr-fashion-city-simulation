@@ -1,3 +1,12 @@
+import { app, analytics } from './firebase-config.js';
+import { getFirestore, collection, addDoc, getDocs, query, where, GeoPoint } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+// Initialize Firestore
+const db = getFirestore(app);
+
+// Constants for location-based queries
+const DRAWING_VISIBILITY_RADIUS = 0.1; // 100 meters in kilometers
+
 // Mapbox access token
 mapboxgl.accessToken = 'pk.eyJ1Ijoic3VzYW5uYXNodSIsImEiOiJjbTZkajNkbWYwb3EyMmlxczdpeDljamxtIn0.0UgPtm1Ag2ai0QbmRszBBg';
 
@@ -130,10 +139,13 @@ function initAR() {
     const scene = document.querySelector('a-scene');
     scene.addEventListener('loaded', () => {
         console.log('AR Scene loaded');
+        // Load existing drawings once we have the user's location
+        loadNearbyDrawings();
     });
 
     navigator.geolocation.getCurrentPosition(position => {
         console.log('User position:', position.coords.latitude, position.coords.longitude);
+        loadNearbyDrawings();
     });
 
     document.addEventListener('touchstart', startDrawing);
@@ -176,6 +188,9 @@ function endDrawing() {
     isDrawing = false;
     if (currentStroke.points.length >= 2) {
         createCurvedLine(currentStroke.points, currentStroke.color, currentStroke.width);
+        
+        // Save the drawing to Firebase
+        saveDrawingToFirebase(currentStroke);
     }
     currentStroke.points = [];
 }
@@ -229,4 +244,78 @@ function createCurvedLine(points, color, width) {
     const entity = document.createElement('a-entity');
     entity.setObject3D('mesh', mesh);
     document.querySelector('#drawings').appendChild(entity);
+}
+
+// Function to save drawing to Firebase
+async function saveDrawingToFirebase(stroke) {
+    try {
+        const docRef = await addDoc(collection(db, "drawings"), {
+            points: stroke.points.map(p => ({ x: p.x, y: p.y, z: p.z })),
+            color: stroke.color,
+            width: stroke.width,
+            timestamp: new Date(),
+            location: {
+                lat: camera.getAttribute('gps-camera').latitude,
+                lng: camera.getAttribute('gps-camera').longitude
+            }
+        });
+        console.log("Drawing saved with ID: ", docRef.id);
+    } catch (e) {
+        console.error("Error saving drawing: ", e);
+    }
+}
+
+// Function to calculate distance between two points in kilometers
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c;
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI/180);
+}
+
+// Function to load nearby drawings from Firebase
+async function loadNearbyDrawings() {
+    if (!camera) return;
+    
+    const userLat = camera.getAttribute('gps-camera').latitude;
+    const userLng = camera.getAttribute('gps-camera').longitude;
+    
+    try {
+        // Create a ~100m box around the user's location
+        const lat = 0.001; // roughly 100m in latitude
+        const lng = 0.001 / Math.cos(userLat * Math.PI / 180); // adjust for longitude
+        
+        const drawingsRef = collection(db, "drawings");
+        const q = query(drawingsRef, 
+            where('location.lat', '>=', userLat - lat),
+            where('location.lat', '<=', userLat + lat)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach((doc) => {
+            const drawing = doc.data();
+            
+            // Additional longitude filter (since we can only query on one field)
+            if (drawing.location.lng >= userLng - lng && 
+                drawing.location.lng <= userLng + lng) {
+                    
+                const points = drawing.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
+                createCurvedLine(points, drawing.color, drawing.width);
+            }
+        });
+        
+        console.log("Nearby drawings loaded successfully");
+    } catch (e) {
+        console.error("Error loading nearby drawings: ", e);
+    }
 } 

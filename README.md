@@ -6,6 +6,15 @@ Play on your phone: https://susannashu.github.io/air-graffiti/
 ## Overview
 This project explores the intersection of public space, technology, and creativity through mixed reality. Inspired by urban graffiti culture, it introduces a web-based AR application that allows users to doodle in iconic Parisian locations like **Palais Royal** and **Pompidou**. Leveraging **AR.js** and **Mapbox**, users can place virtual drawings at specific GPS coordinates, enabling interaction with space while preserving cultural heritage. This experiment envisions an open, collaborative canvas that evolves over time without impacting physical environments.
 
+your-project/
+├── models/
+│   └── model.glb
+├── docs/
+│   └── 3D-MODELS.md
+├── app.js
+├── index.html
+└── ...
+
 ## Concept
 **How it works:**`
 - Users access the web app via their smartphone and see the public space in AR.
