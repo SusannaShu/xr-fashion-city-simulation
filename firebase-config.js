@@ -4,13 +4,13 @@ import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAUPDWdz5gup52-t3LqoS0F7ltu1tShEyQ",
-  authDomain: "susu-virtual-space.firebaseapp.com",
-  projectId: "susu-virtual-space",
-  storageBucket: "susu-virtual-space.firebasestorage.app",
-  messagingSenderId: "758278754335",
-  appId: "1:758278754335:web:532416edffe0aaf88fc52a",
-  measurementId: "G-0RP598KKPX"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

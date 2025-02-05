@@ -8,7 +8,7 @@ const db = getFirestore(app);
 const DRAWING_VISIBILITY_RADIUS = 0.1; // 100 meters in kilometers
 
 // Mapbox access token
-mapboxgl.accessToken = 'pk.eyJ1Ijoic3VzYW5uYXNodSIsImEiOiJjbTZkajNkbWYwb3EyMmlxczdpeDljamxtIn0.0UgPtm1Ag2ai0QbmRszBBg';
+mapboxgl.accessToken = process.env.MAPBOX_ACCESS_TOKEN;
 
 // Initialize map centered on Paris
 const map = new mapboxgl.Map({
