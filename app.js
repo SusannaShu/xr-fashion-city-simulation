@@ -2,6 +2,9 @@ import { app, analytics } from './firebase-config.js';
 import { config } from './config.js';
 import { getFirestore, collection, addDoc, getDocs, query, where, GeoPoint } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
+// Initialize Three.js loader for GLB files
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 // Initialize Firestore
 const db = getFirestore(app);
 
@@ -23,7 +26,7 @@ const map = new mapboxgl.Map({
     antialias: true
 });
 
-// Add 3D buildings layer
+// Add custom layer for 3D model
 map.on('style.load', () => {
     // Add 3D building layer
     map.addLayer({
@@ -56,6 +59,94 @@ map.on('style.load', () => {
             'fill-extrusion-opacity': 0.6
         }
     });
+
+    // Create custom layer for 3D model
+    const modelOrigin = [2.3378, 48.8644]; // Adjusted to be in the courtyard space
+    const modelAltitude = 0;
+    const modelRotate = [Math.PI / 2, 0, 0];
+
+    const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
+        modelOrigin,
+        modelAltitude
+    );
+
+    // Create a custom layer for the 3D model
+    const customLayer = {
+        id: '3d-model',
+        type: 'custom',
+        renderingMode: '3d',
+        onAdd: function(map, gl) {
+            this.camera = new THREE.Camera();
+            this.scene = new THREE.Scene();
+
+            // Create ambient and directional lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            directionalLight.position.set(0, -70, 100).normalize();
+            
+            this.scene.add(ambientLight);
+            this.scene.add(directionalLight);
+
+            // Load the 3D model
+            const loader = new GLTFLoader();
+            loader.load(
+                './models/susanna_heel.glb',
+                (gltf) => {
+                    this.scene.add(gltf.scene);
+                    
+                    // Scale the model to fit the space
+                    const scale = modelAsMercatorCoordinate.meterInMercatorCoordinateUnits();
+                    gltf.scene.scale.set(scale * 20, scale * 20, scale * 20);
+                    
+                    // Rotate and position the model
+                    gltf.scene.rotation.set(...modelRotate);
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading 3D model:', error);
+                }
+            );
+
+            this.map = map;
+            this.renderer = new THREE.WebGLRenderer({
+                canvas: map.getCanvas(),
+                context: gl,
+                antialias: true
+            });
+
+            this.renderer.autoClear = false;
+        },
+        render: function(gl, matrix) {
+            const rotationX = new THREE.Matrix4().makeRotationAxis(
+                new THREE.Vector3(1, 0, 0),
+                modelRotate[0]
+            );
+            const rotationY = new THREE.Matrix4().makeRotationAxis(
+                new THREE.Vector3(0, 1, 0),
+                modelRotate[1]
+            );
+            const rotationZ = new THREE.Matrix4().makeRotationAxis(
+                new THREE.Vector3(0, 0, 1),
+                modelRotate[2]
+            );
+
+            const m = new THREE.Matrix4().fromArray(matrix);
+            const l = new THREE.Matrix4()
+                .makeTranslation(
+                    modelAsMercatorCoordinate.x,
+                    modelAsMercatorCoordinate.y,
+                    modelAsMercatorCoordinate.z
+                )
+                .scale(new THREE.Vector3(1, -1, 1));
+
+            this.camera.projectionMatrix = m.multiply(l);
+            this.renderer.resetState();
+            this.renderer.render(this.scene, this.camera);
+            this.map.triggerRepaint();
+        }
+    };
+
+    map.addLayer(customLayer);
 
     // Fly to Palais Royal
     map.flyTo({
@@ -115,20 +206,40 @@ let camera;
 let raycaster;
 let drawingDistance = -1; // Default drawing distance in meters
 
-startARButton.addEventListener('click', () => {
-    uiContainer.style.display = 'none';
-    arScene.style.display = 'block';
+async function requestPermissions() {
+    try {
+        // Request camera permission
+        const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraStream.getTracks().forEach(track => track.stop()); // Stop the stream as AR.js will handle it
+        
+        // Request geolocation permission
+        const geoPermission = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        // Request device orientation permission if needed (iOS)
+        if (typeof DeviceOrientationEvent !== 'undefined' && 
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+            const orientationPermission = await DeviceOrientationEvent.requestPermission();
+            if (orientationPermission !== 'granted') {
+                throw new Error('Device orientation permission denied');
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Permission error:', error);
+        alert('Please grant camera and location permissions to use AR features');
+        return false;
+    }
+}
+
+startARButton.addEventListener('click', async () => {
+    const permissionsGranted = await requestPermissions();
     
-    if (typeof DeviceOrientationEvent !== 'undefined' && 
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-            .then(response => {
-                if (response == 'granted') {
-                    initAR();
-                }
-            })
-            .catch(console.error);
-    } else {
+    if (permissionsGranted) {
+        uiContainer.style.display = 'none';
+        arScene.style.display = 'block';
         initAR();
     }
 });
@@ -146,9 +257,14 @@ function initAR() {
         loadNearbyDrawings();
     });
 
-    navigator.geolocation.getCurrentPosition(position => {
-        console.log('User position:', position.coords.latitude, position.coords.longitude);
-        loadNearbyDrawings();
+    // Add error handling for GPS
+    camera.addEventListener('gps-camera-update-position', () => {
+        console.log('GPS position updated');
+    });
+
+    camera.addEventListener('gps-camera-update-position-error', (error) => {
+        console.error('GPS error:', error);
+        alert('GPS position error. Please ensure location services are enabled.');
     });
 
     document.addEventListener('touchstart', startDrawing);
