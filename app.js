@@ -1,4 +1,5 @@
 import { app, analytics } from './firebase-config.js';
+import { config } from './config.js';
 import { getFirestore, collection, addDoc, getDocs, query, where, GeoPoint } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
 // Initialize Firestore
@@ -8,7 +9,8 @@ const db = getFirestore(app);
 const DRAWING_VISIBILITY_RADIUS = 0.1; // 100 meters in kilometers
 
 // Mapbox access token
-mapboxgl.accessToken = process.env.MAPBOX_ACCESS_TOKEN;
+mapboxgl.accessToken = config.mapbox.accessToken;
+console.log('Mapbox Access Token:', config.mapbox.accessToken);
 
 // Initialize map centered on Paris
 const map = new mapboxgl.Map({
@@ -69,11 +71,12 @@ const locations = [
     {
         name: 'Palais Royal',
         coordinates: [2.3376, 48.8642]
-    },
-    {
-        name: 'Centre Pompidou',
-        coordinates: [2.3522, 48.8606]
     }
+    // ,
+    // {
+    //     name: 'Centre Pompidou',
+    //     coordinates: [2.3522, 48.8606]
+    // }
 ];
 
 // Add markers to the map with click handlers
