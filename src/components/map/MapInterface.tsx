@@ -359,7 +359,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
         map={mapInstance.current}
       />
       <button className={styles.arButton} onClick={() => navigate('/ar')}>
-        Start Air Graffiti
+        👀
       </button>
       {isOffline && (
         <div className={styles.offlineIndicator}>

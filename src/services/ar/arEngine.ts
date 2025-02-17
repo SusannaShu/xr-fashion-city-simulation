@@ -113,51 +113,31 @@ export class AREngine {
           'maxDetectionRate: 30;'
       );
 
-      // Add camera entity with location tracking
+      // Add camera entity
       const camera = document.createElement('a-entity');
       camera.setAttribute('camera', '');
       camera.setAttribute('look-controls', 'enabled: true');
       camera.setAttribute('position', '0 1.6 0');
-      camera.setAttribute(
-        'gps-projected-camera',
-        `simulateLatitude: ${this.userLocation.latitude}; ` +
-          `simulateLongitude: ${this.userLocation.longitude}; ` +
-          'positionMinAccuracy: 100;'
-      );
+      camera.setAttribute('wasd-controls', 'enabled: false');
 
-      // Add the Susanna model
+      // Add the Susanna model directly in front of the camera
       const modelEntity = document.createElement('a-entity');
-      modelEntity.setAttribute('gltf-model-plus', {
-        src: '/models/susanna_heel.glb',
-        position: { x: 0, y: 2, z: -5 }, // Position above ground
-        scale: { x: 0.5, y: 0.5, z: 0.5 }, // Adjust scale as needed
-      });
-      modelEntity.setAttribute('gps-projected-entity-place', {
-        latitude: 48.8612,
-        longitude: 2.3364,
-      });
+      modelEntity.setAttribute('gltf-model', '/models/susanna_heel.glb');
+      modelEntity.setAttribute('position', '0 0 -3'); // 3 meters in front
+      modelEntity.setAttribute('scale', '2 2 2'); // Life-size scale
+      modelEntity.setAttribute('rotation', '0 0 0');
 
-      // Add drawing plane
-      const drawingPlane = document.createElement('a-entity');
-      drawingPlane.setAttribute('drawing-plane', '');
-      drawingPlane.setAttribute(
-        'geometry',
-        'primitive: plane; width: 100; height: 100'
-      );
-      drawingPlane.setAttribute('material', 'visible: false');
-      drawingPlane.setAttribute('position', '0 0 -5');
-      drawingPlane.setAttribute('rotation', '-90 0 0');
-
-      // Listen for drawing events
-      drawingPlane.addEventListener('draw-point', (event: any) => {
-        if (this.isDrawingEnabled && event.detail) {
-          this.handleDrawPoint(event.detail.point);
-        }
+      // Add ambient light for better visibility
+      const light = document.createElement('a-entity');
+      light.setAttribute('light', {
+        type: 'ambient',
+        color: '#ffffff',
+        intensity: 1.5,
       });
 
       aframeScene.appendChild(camera);
-      aframeScene.appendChild(drawingPlane);
       aframeScene.appendChild(modelEntity);
+      aframeScene.appendChild(light);
 
       // Add the scene to container
       this.container.appendChild(aframeScene);
