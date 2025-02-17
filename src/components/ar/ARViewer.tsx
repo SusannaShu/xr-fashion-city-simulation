@@ -46,14 +46,11 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const isSimulatedMobile =
     isDev && new URLSearchParams(window.location.search).has('simulateMobile');
 
-  const logDebug = useCallback(
-    (message: string) => {
-      if (isDev) {
-        console.log(`[AR Debug] ${message}`);
-      }
-    },
-    [isDev]
-  );
+  const logDebug = useCallback((message: string) => {
+    // Always log in production for now to help with debugging
+    console.log(`[AR Debug] ${message}`);
+    setDebugInfo(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
+  }, []);
 
   const addStatusDetail = useCallback(
     (detail: string) => {
@@ -79,12 +76,21 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   }, [logDebug]);
 
   const initializeAR = useCallback(async () => {
-    if (!containerRef.current) return;
+    if (!containerRef.current) {
+      logDebug('Container ref not available');
+      return;
+    }
 
     try {
       logDebug('Initializing AR...');
+      logDebug(`User Agent: ${navigator.userAgent}`);
+      logDebug(`Window Size: ${window.innerWidth}x${window.innerHeight}`);
+      logDebug(`Protocol: ${window.location.protocol}`);
+
       const drawingService = DrawingService.getInstance();
       const locationService = LocationService.getInstance();
+
+      logDebug('Initializing AR Engine...');
       const arEngine = await AREngine.initialize({
         container: containerRef.current,
         onStart: () => {
@@ -116,6 +122,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       const err =
         error instanceof Error ? error : new Error('Unknown error occurred');
       logDebug(`AR initialization failed: ${err.message}`);
+      logDebug(`Stack trace: ${err.stack}`);
       setStatus(`Error: ${err.message}`);
       onError?.(err);
     }

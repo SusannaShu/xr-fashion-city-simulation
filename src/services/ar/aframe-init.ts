@@ -80,15 +80,24 @@ export const initializeAFrame = async (): Promise<void> => {
     const htmlScript = script as unknown as HTMLScriptElement;
     htmlScript.src = 'https://aframe.io/releases/1.4.2/aframe.min.js';
     htmlScript.setAttribute('data-aframe-initialized', 'true');
+    htmlScript.crossOrigin = 'anonymous';
+
+    // Add error handling for script loading
+    htmlScript.onerror = () => {
+      console.error('Failed to load A-Frame script');
+      throw new Error('Failed to load A-Frame script');
+    };
+
     document.head.appendChild(htmlScript);
 
-    // Wait for A-Frame to be loaded
+    // Wait for A-Frame to be loaded with timeout
     await new Promise<void>((resolve, reject) => {
       const maxAttempts = 50;
       let attempts = 0;
 
       const checkInit = () => {
         if (window.AFRAME && window.AFRAME.components) {
+          console.log('A-Frame loaded successfully');
           resolve();
         } else if (attempts >= maxAttempts) {
           reject(
