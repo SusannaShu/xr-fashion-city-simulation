@@ -1,323 +1,86 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as THREE from 'three';
-import { AREngine } from '../../services/ar/arEngine';
-import { LocationService } from '../../services/ar/locationService';
-import { DrawingService } from '../../services/ar/drawingService';
-import { ProcessedModel } from '../../services/model/ModelTransformer';
-import { ModelMetadata } from '../../services/firebase/metadata';
-import { DrawingCanvas } from './DrawingCanvas';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './ARViewer.module.css';
 
-interface ARViewerProps {
-  onStart?: () => void;
-  onEnd?: () => void;
-  onError?: (error: Error) => void;
-  onBack?: () => void;
+// Extend JSX.IntrinsicElements using module augmentation
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'a-scene': any;
+      'a-entity': any;
+      'a-light': any;
+    }
+  }
 }
+/* eslint-enable @typescript-eslint/no-namespace */
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
-type ARMode = 'webxr' | 'webrtc' | 'quicklook' | 'arjs' | null;
-
-// Extended DeviceOrientationEvent type
-interface ExtendedDeviceOrientationEventStatic {
-  new (): DeviceOrientationEvent;
-  prototype: DeviceOrientationEvent;
-  requestPermission?: () => Promise<'granted' | 'denied'>;
-}
-
-export const ARViewer: React.FC<ARViewerProps> = ({
-  onStart,
-  onEnd,
-  onError,
-  onBack,
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<string>('Initializing...');
-  const [detailedStatus, setDetailedStatus] = useState<string[]>([]);
-  const [isARSupported, setIsARSupported] = useState<boolean | null>(null);
-  const [arMode, setARMode] = useState<ARMode>(null);
-  const [showMotionPermissionButton, setShowMotionPermissionButton] =
-    useState(false);
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
-  const hasCheckedRef = useRef(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Development mode detection
-  const isDev = process.env.NODE_ENV === 'development';
-  const isSimulatedMobile =
-    isDev && new URLSearchParams(window.location.search).has('simulateMobile');
-
-  const logDebug = useCallback((message: string) => {
-    // Always log in production for now to help with debugging
-    console.log(`[AR Debug] ${message}`);
-    setDebugInfo(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
-  }, []);
-
-  const addStatusDetail = useCallback(
-    (detail: string) => {
-      logDebug(detail);
-      setDetailedStatus(prev => {
-        if (prev[prev.length - 1] === detail) return prev;
-        return [...prev, detail];
-      });
-    },
-    [logDebug]
-  );
-
-  const clearStatus = useCallback(() => {
-    setDetailedStatus([]);
-    setDebugInfo([]);
-  }, []);
-
-  const cleanup = useCallback(() => {
-    logDebug('Cleaning up AR resources');
-    const locationService = LocationService.getInstance();
-    const drawingService = DrawingService.getInstance();
-    AREngine.cleanup();
-  }, [logDebug]);
-
-  const initializeAR = useCallback(async () => {
-    if (!containerRef.current) {
-      logDebug('Container ref not available');
-      return;
-    }
-
-    try {
-      logDebug('Initializing AR...');
-      logDebug(`User Agent: ${navigator.userAgent}`);
-      logDebug(`Window Size: ${window.innerWidth}x${window.innerHeight}`);
-      logDebug(`Protocol: ${window.location.protocol}`);
-
-      const drawingService = DrawingService.getInstance();
-      const locationService = LocationService.getInstance();
-
-      logDebug('Initializing AR Engine...');
-      const arEngine = await AREngine.initialize({
-        container: containerRef.current,
-        onStart: () => {
-          logDebug('AR session started');
-          setStatus('AR session active - Move your phone to draw in space');
-          onStart?.();
-        },
-        onEnd: () => {
-          logDebug('AR session ended');
-          setStatus('AR session ended');
-          onEnd?.();
-        },
-        onError: error => {
-          logDebug(`AR error: ${error.message}`);
-          setStatus(`Error: ${error.message}`);
-          onError?.(error);
-        },
-      });
-
-      logDebug('Initializing drawing service...');
-      drawingService.initialize(arEngine.getScene());
-
-      logDebug('Starting location tracking...');
-      await locationService.startTracking();
-
-      logDebug('AR initialization complete');
-      setIsInitialized(true);
-    } catch (error) {
-      const err =
-        error instanceof Error ? error : new Error('Unknown error occurred');
-      logDebug(`AR initialization failed: ${err.message}`);
-      logDebug(`Stack trace: ${err.stack}`);
-      setStatus(`Error: ${err.message}`);
-      onError?.(err);
-    }
-  }, [onStart, onEnd, onError, logDebug]);
-
-  const handleMotionPermissionClick = useCallback(async () => {
-    try {
-      logDebug('Requesting motion permission...');
-      const DeviceOrientationEventExt =
-        DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
-
-      if (isSimulatedMobile) {
-        logDebug('Simulating granted motion permission');
-        setShowMotionPermissionButton(false);
-        addStatusDetail('✓ Motion sensors granted (simulated)');
-        setIsARSupported(true);
-        setARMode('arjs');
-        void initializeAR();
-        return;
-      }
-
-      const permission = await DeviceOrientationEventExt.requestPermission?.();
-      logDebug(`Motion permission result: ${permission}`);
-
-      if (permission === 'granted') {
-        setShowMotionPermissionButton(false);
-        addStatusDetail('✓ Motion sensors granted');
-        setIsARSupported(true);
-        setARMode('arjs');
-        void initializeAR();
-      } else {
-        addStatusDetail('❌ Motion sensor permission denied');
-        setStatus('Motion Sensors Required');
-      }
-    } catch (error) {
-      logDebug(`Motion permission error: ${error}`);
-      addStatusDetail('❌ Error requesting motion sensors');
-      setStatus('Motion Sensors Required');
-    }
-  }, [addStatusDetail, initializeAR, isSimulatedMobile, logDebug]);
-
-  const checkDeviceSupport = useCallback(async () => {
-    if (hasCheckedRef.current) return;
-    hasCheckedRef.current = true;
-
-    try {
-      clearStatus();
-      logDebug('Checking device support...');
-
-      // In development, allow simulated mobile
-      const isMobile =
-        isSimulatedMobile ||
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        );
-
-      logDebug(
-        `Device check - Mobile: ${isMobile}, Simulated: ${isSimulatedMobile}`
-      );
-
-      if (!isMobile) {
-        setIsARSupported(false);
-        setStatus('AR Not Supported');
-        addStatusDetail(
-          '❌ Device not supported: AR features are only available on mobile devices'
-        );
-        return;
-      }
-      addStatusDetail('✓ Device supported');
-
-      // Check camera access
-      try {
-        logDebug('Requesting camera access...');
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
-        });
-        stream.getTracks().forEach(track => track.stop());
-        addStatusDetail('✓ Camera access granted');
-      } catch (error) {
-        logDebug(`Camera access error: ${error}`);
-        setIsARSupported(false);
-        setStatus('Camera Access Required');
-        addStatusDetail('❌ Camera access denied');
-        return;
-      }
-
-      // Check if iOS device or simulated
-      const isIOS =
-        isSimulatedMobile || /iPad|iPhone|iPod/.test(navigator.userAgent);
-      logDebug(`Device check - iOS: ${isIOS}, Simulated: ${isSimulatedMobile}`);
-
-      if (isIOS) {
-        const DeviceOrientationEventExt =
-          DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
-        if (
-          typeof DeviceOrientationEventExt.requestPermission === 'function' ||
-          isSimulatedMobile
-        ) {
-          setShowMotionPermissionButton(true);
-          setStatus('Motion Sensors Required');
-          addStatusDetail('Tap "Allow Motion Sensors" to enable AR features');
-          return;
-        }
-      }
-
-      // For non-iOS devices or iOS devices without motion permission requirement
-      logDebug('No motion permission required, proceeding with AR');
-      setIsARSupported(true);
-      setARMode(isIOS ? 'arjs' : 'webxr');
-      void initializeAR();
-    } catch (error) {
-      logDebug(`Device support check error: ${error}`);
-      setIsARSupported(false);
-      setStatus('Initialization Failed');
-      addStatusDetail(
-        `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-  }, [addStatusDetail, clearStatus, initializeAR, isSimulatedMobile, logDebug]);
+export const ARViewer: React.FC = () => {
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (containerRef.current) {
-      void checkDeviceSupport();
-    }
-    return cleanup;
-  }, [checkDeviceSupport, cleanup]);
+    // Load A-Frame script
+    const loadScripts = async () => {
+      // Load A-Frame first
+      await new Promise<void>((resolve, reject) => {
+        const aframeScript = document.createElement('script') as any;
+        aframeScript.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
+        aframeScript.onload = () => resolve();
+        aframeScript.onerror = reject;
+        document.head.appendChild(aframeScript);
+      });
 
-  const loadNearbyModels = async (models: ModelMetadata[]) => {
-    const arEngine = AREngine.getInstance();
-    const locationService = LocationService.getInstance();
+      // Then load AR.js
+      await new Promise<void>((resolve, reject) => {
+        const arScript = document.createElement('script') as any;
+        arScript.src =
+          'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js';
+        arScript.onload = () => resolve();
+        arScript.onerror = reject;
+        document.head.appendChild(arScript);
+      });
+    };
 
-    for (const model of models) {
-      try {
-        const processedModel: ProcessedModel = await loadModel(model);
-        const anchor = await locationService.createSpatialAnchor(model.id);
-        if (anchor) {
-          await arEngine.placeModel(processedModel, {
-            position: new THREE.Vector3(
-              anchor.orientation.alpha,
-              anchor.orientation.beta,
-              anchor.orientation.gamma
-            ),
-          });
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          setStatus(`Error loading model: ${error.message}`);
-        }
-      }
-    }
-  };
+    void loadScripts();
+
+    return () => {
+      // Cleanup scripts when component unmounts
+      const scripts = document.querySelectorAll('script[src*="aframe"]');
+      scripts.forEach(script => script.remove());
+    };
+  }, []);
 
   return (
-    <div ref={containerRef} className={styles.container}>
-      <div className={styles.arViewer}>
-        <div className={styles.arScene}>
-          {isInitialized && (
-            <DrawingCanvas camera={AREngine.getCamera()} isActive={true} />
-          )}
-        </div>
-      </div>
-
-      <div
-        className={styles.statusOverlay}
-        style={{
-          display:
-            !isARSupported || showMotionPermissionButton ? 'flex' : 'none',
-        }}
+    <div className={styles.container}>
+      <a-scene
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        renderer="logarithmicDepthBuffer: true;"
+        vr-mode-ui="enabled: false"
       >
-        <h2>{status}</h2>
-        <div className={styles.statusDetails}>
-          {detailedStatus.map((detail, index) => (
-            <p key={index}>{detail}</p>
-          ))}
-        </div>
-        {showMotionPermissionButton && (
-          <button
-            className={styles.permissionButton}
-            onClick={handleMotionPermissionClick}
-          >
-            Allow Motion Sensors
-          </button>
-        )}
-        <button className={styles.backButton} onClick={onBack}>
-          Back to Map
-        </button>
-      </div>
+        {/* Camera */}
+        <a-entity camera></a-entity>
+
+        {/* Susanna Shoes Model */}
+        <a-entity
+          gltf-model="/susanna_heel.glb"
+          position="0 0 -1"
+          scale="0.5 0.5 0.5"
+          rotation="0 0 0"
+        >
+          {/* Add ambient light for better visibility */}
+          <a-light type="ambient" color="#ffffff" intensity="1"></a-light>
+        </a-entity>
+      </a-scene>
+
+      {/* Back button */}
+      <button className={styles.backButton} onClick={() => navigate('/')}>
+        ← Back to Map
+      </button>
     </div>
   );
 };
-
-// Helper function to load a model (to be implemented)
-async function loadModel(metadata: ModelMetadata): Promise<ProcessedModel> {
-  // This will be implemented when we create the ModelLoader component
-  throw new Error('Not implemented');
-}
 
 export default ARViewer;

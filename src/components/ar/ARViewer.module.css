@@ -1,10 +1,46 @@
 .container {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Make sure the AR scene takes up the full viewport */
+:global(a-scene) {
+  width: 100%;
+  height: 100vh;
+}
+
+/* Hide any AR.js UI elements we don't need */
+:global(.a-enter-vr),
+:global(.a-orientation-modal) {
+  display: none !important;
+}
+
+/* Style the back button */
+.backButton {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 12px 24px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
   z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure the button is visible on iOS devices */
+@supports (-webkit-touch-callout: none) {
+  .backButton {
+    top: env(safe-area-inset-top, 20px);
+    left: env(safe-area-inset-left, 20px);
+  }
 }
 
 .arScene {
@@ -75,23 +111,6 @@
   color: white;
   padding: 2rem;
   border-radius: 1rem;
-}
-
-.backButton {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.5rem 1rem;
-  background: #FF69B4;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  z-index: 2000;
-}
-
-.backButton:hover {
-  background: #FF1493;
 }
 
 .notSupportedMessage {

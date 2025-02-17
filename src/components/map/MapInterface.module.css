@@ -84,20 +84,23 @@
 }
 
 .arButton {
-  position: absolute;
+  position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 12px 24px;
+  padding: 15px 30px;
   background-color: #FF69B4;
   color: white;
   border: none;
   border-radius: 25px;
-  font-size: 16px;
+  font-size: 24px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+  z-index: 1000;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .arButton:hover {
@@ -107,6 +110,22 @@
 
 .arButton:active {
   transform: translateX(-50%) scale(0.98);
+}
+
+/* Mobile-specific styles */
+@media screen and (max-width: 768px) {
+  .arButton {
+    padding: 12px 24px;
+    font-size: 20px;
+    bottom: 40px;
+  }
+}
+
+/* Ensure button is visible on iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  .arButton {
+    bottom: 80px;
+  }
 }
 
 .controls {
