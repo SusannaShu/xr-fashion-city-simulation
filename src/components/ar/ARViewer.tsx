@@ -151,45 +151,27 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     const DeviceOrientationEventExt =
       DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
 
-    // Check if we need to request permission (iOS 13+)
+    // For iOS devices
     if (typeof DeviceOrientationEventExt.requestPermission === 'function') {
       try {
-        // First try requesting permission
+        // Try to request permission
         const permission = await DeviceOrientationEventExt.requestPermission();
-        return permission === 'granted';
+        if (permission === 'granted') {
+          return true;
+        }
       } catch (e) {
-        // If request fails, try checking if we already have permission
-        return new Promise(resolve => {
-          // Set up a one-time device orientation event listener
-          const timeoutId = setTimeout(() => {
-            window.removeEventListener('deviceorientation', checkMotion);
-            resolve(false); // No motion events received within timeout
-          }, 1000);
-
-          const checkMotion = (event: DeviceOrientationEvent) => {
-            if (
-              event.alpha !== null ||
-              event.beta !== null ||
-              event.gamma !== null
-            ) {
-              window.removeEventListener('deviceorientation', checkMotion);
-              clearTimeout(timeoutId);
-              resolve(true); // We received motion data, so permission must be granted
-            }
-          };
-
-          window.addEventListener('deviceorientation', checkMotion, {
-            once: true,
-          });
-        });
+        console.log(
+          'Motion permission request failed, checking if already granted'
+        );
       }
     }
 
-    // For non-iOS devices or older iOS versions, check if we can get motion data
+    // For all devices: Check if we can actually receive motion data
     return new Promise(resolve => {
+      let hasReceivedData = false;
       const timeoutId = setTimeout(() => {
         window.removeEventListener('deviceorientation', checkMotion);
-        resolve(false);
+        resolve(hasReceivedData);
       }, 1000);
 
       const checkMotion = (event: DeviceOrientationEvent) => {
@@ -198,13 +180,14 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           event.beta !== null ||
           event.gamma !== null
         ) {
+          hasReceivedData = true;
           window.removeEventListener('deviceorientation', checkMotion);
           clearTimeout(timeoutId);
           resolve(true);
         }
       };
 
-      window.addEventListener('deviceorientation', checkMotion, { once: true });
+      window.addEventListener('deviceorientation', checkMotion);
     });
   }, []);
 
@@ -239,7 +222,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             if (e.name === 'NotAllowedError') {
               setIsARSupported(false);
               setStatus(
-                'Camera access is required for AR features. Please grant camera permissions in your browser settings and reload the page.'
+                'Please grant camera access: tap the camera icon in the address bar, then reload the page.'
               );
               return;
             } else if (e.name === 'NotFoundError') {
@@ -266,23 +249,26 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
               setStatus(
-                'Motion sensor access is required for AR. Please enable motion sensors: Settings > Safari > Motion & Orientation Access. Then reload the page.'
+                'Please enable motion sensors: tap the "aA" icon in the address bar, select "Website Settings", enable Motion Sensors, then reload.'
               );
             } else {
               setStatus(
-                'Motion sensor access is required for AR. Please ensure motion sensors are enabled in your device settings and reload the page.'
+                'Please enable motion sensors in your browser settings, then reload the page.'
               );
             }
             return;
           }
 
-          // Check for WebXR support on Safari
+          // For iOS devices, use AR.js regardless of browser
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          const isSafari = /^((?!chrome|android).)*safari/i.test(
-            navigator.userAgent
-          );
+          if (isIOS) {
+            setIsARSupported(true);
+            setARMode('arjs');
+            return;
+          }
 
-          if (isIOS && isSafari && navigator.xr) {
+          // For Android, try WebXR first
+          if (navigator.xr) {
             try {
               const isImmersiveARSupported =
                 await navigator.xr.isSessionSupported('immersive-ar');
@@ -292,11 +278,11 @@ export const ARViewer: React.FC<ARViewerProps> = ({
                 return;
               }
             } catch (e) {
-              // Continue to other methods if WebXR is not supported
+              // Continue to AR.js if WebXR fails
             }
           }
 
-          // If WebXR is not supported, use AR.js
+          // Fallback to AR.js for all other cases
           setIsARSupported(true);
           setARMode('arjs');
           return;
@@ -393,23 +379,14 @@ export const ARViewer: React.FC<ARViewerProps> = ({
               navigator.userAgent
             ) ? (
               <>
-                {/iPad|iPhone|iPod/.test(navigator.userAgent) &&
-                !/^((?!chrome|android).)*safari/i.test(navigator.userAgent) ? (
-                  <>
-                    <p>
-                      AR features are only available in Safari on iOS devices.
-                    </p>
-                    <p>Please open this page in Safari to use AR features.</p>
-                  </>
-                ) : (
-                  <>
-                    <p>
-                      Your mobile device or browser does not support AR
-                      features.
-                    </p>
-                    <p>Please use Safari on iOS or Chrome on Android.</p>
-                  </>
-                )}
+                <p>Please ensure you have:</p>
+                <ol>
+                  <li>
+                    Granted camera access (check the camera icon in address bar)
+                  </li>
+                  <li>Enabled motion sensors (check browser settings)</li>
+                  <li>Reloaded the page after granting permissions</li>
+                </ol>
               </>
             ) : (
               <>
