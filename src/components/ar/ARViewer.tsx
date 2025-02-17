@@ -31,8 +31,13 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<string>('Initializing...');
+  const [detailedStatus, setDetailedStatus] = useState<string[]>([]);
   const [isARSupported, setIsARSupported] = useState<boolean | null>(null);
   const [arMode, setARMode] = useState<ARMode>(null);
+
+  const addStatusDetail = useCallback((detail: string) => {
+    setDetailedStatus(prev => [...prev, detail]);
+  }, []);
 
   const cleanup = useCallback(() => {
     const locationService = LocationService.getInstance();
@@ -180,6 +185,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
   const checkARSupport = useCallback(async () => {
     try {
+      addStatusDetail('Checking device compatibility...');
       const isMobile =
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           navigator.userAgent
@@ -187,13 +193,16 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
       if (!isMobile) {
         setIsARSupported(false);
-        setStatus(
-          'AR features are only available on mobile devices. Please access this feature from your phone or tablet.'
+        setStatus('AR Not Supported');
+        addStatusDetail(
+          '❌ Device not supported: AR features are only available on mobile devices'
         );
         return;
       }
+      addStatusDetail('✓ Device supported');
 
-      // Check camera access first
+      // Check camera access
+      addStatusDetail('Requesting camera access...');
       let hasCamera = false;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -201,56 +210,80 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         });
         stream.getTracks().forEach(track => track.stop());
         hasCamera = true;
+        addStatusDetail('✓ Camera access granted');
       } catch (e) {
         setIsARSupported(false);
-        setStatus('Please allow camera access to use AR');
+        setStatus('Camera Access Required');
+        addStatusDetail('❌ Camera access denied');
         return;
       }
 
-      // If we have camera access, check for device orientation
+      // Check device orientation
       if (hasCamera) {
+        addStatusDetail('Checking motion sensors...');
         const hasMotionPermission = await requestMotionPermission();
 
         if (!hasMotionPermission) {
           setIsARSupported(false);
-          setStatus('Tap here to enable AR');
+          setStatus('Motion Sensors Required');
+          addStatusDetail('❌ Motion sensor access denied');
           return;
         }
+        addStatusDetail('✓ Motion sensors available');
 
-        // For iOS devices, use AR.js regardless of browser
+        // Check location services
+        addStatusDetail('Checking location services...');
+        try {
+          const locationService = LocationService.getInstance();
+          await locationService.requestPermissions();
+          addStatusDetail('✓ Location services ready');
+        } catch (e) {
+          addStatusDetail('⚠️ Location services not available');
+        }
+
+        // For iOS devices, use AR.js
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (isIOS) {
           setIsARSupported(true);
           setARMode('arjs');
+          addStatusDetail('✓ Using AR.js for iOS');
           return;
         }
 
         // For Android, try WebXR first
         if (navigator.xr) {
           try {
+            addStatusDetail('Checking WebXR support...');
             const isImmersiveARSupported =
               await navigator.xr.isSessionSupported('immersive-ar');
             if (isImmersiveARSupported) {
               setIsARSupported(true);
               setARMode('webxr');
+              addStatusDetail('✓ WebXR supported');
               return;
             }
+            addStatusDetail('⚠️ WebXR not supported');
           } catch (e) {
-            // Continue to AR.js if WebXR fails
+            addStatusDetail('⚠️ WebXR check failed');
           }
         }
 
-        // Fallback to AR.js for all other cases
+        // Fallback to AR.js
         setIsARSupported(true);
         setARMode('arjs');
+        addStatusDetail('✓ Using AR.js fallback');
         return;
       }
 
       setIsARSupported(false);
-      setStatus('Unable to start AR. Please try again.');
+      setStatus('AR Not Available');
+      addStatusDetail('❌ Required features not available');
     } catch (error) {
       setIsARSupported(false);
-      setStatus('Unable to start AR. Please try again.');
+      setStatus('Initialization Failed');
+      addStatusDetail(
+        `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }, [requestMotionPermission]);
 
@@ -327,29 +360,20 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   };
 
   return (
-    <div className={styles.container} ref={containerRef}>
-      <div className={styles.statusOverlay}>
-        {status}
-        {!isARSupported && (
-          <div className={styles.notSupportedMessage}>
-            {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-              navigator.userAgent
-            ) ? (
-              <button
-                className={styles.permissionButton}
-                onClick={() => void checkARSupport()}
-              >
-                Start AR
-              </button>
-            ) : (
-              <p>Please open this page on your mobile device</p>
-            )}
-            <button className={styles.backButton} onClick={onBack}>
-              Back to Map
-            </button>
+    <div ref={containerRef} className={styles.container}>
+      {!isARSupported && (
+        <div className={styles.statusOverlay}>
+          <h2>{status}</h2>
+          <div className={styles.statusDetails}>
+            {detailedStatus.map((detail, index) => (
+              <p key={index}>{detail}</p>
+            ))}
           </div>
-        )}
-      </div>
+          <button className={styles.backButton} onClick={onBack}>
+            Back to Map
+          </button>
+        </div>
+      )}
     </div>
   );
 };
