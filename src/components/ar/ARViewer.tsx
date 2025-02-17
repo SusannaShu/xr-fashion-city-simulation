@@ -166,6 +166,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           navigator.userAgent
         );
 
+        // First check for WebXR support on Safari
         if (isIOS && isSafari && navigator.xr) {
           try {
             const isImmersiveARSupported =
@@ -180,40 +181,77 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           }
         }
 
+        // Check camera access first
+        let hasCamera = false;
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' },
           });
           stream.getTracks().forEach(track => track.stop());
+          hasCamera = true;
+        } catch (e) {
+          if (e instanceof Error) {
+            if (e.name === 'NotAllowedError') {
+              setIsARSupported(false);
+              setStatus(
+                'Camera access is required for AR features. Please grant camera permissions in your browser settings and reload the page.'
+              );
+              return;
+            } else if (e.name === 'NotFoundError') {
+              setIsARSupported(false);
+              setStatus(
+                'No camera found. Please ensure your device has a working camera.'
+              );
+              return;
+            }
+          }
+          setIsARSupported(false);
+          setStatus(
+            'Failed to access camera. Please check your camera permissions and try again.'
+          );
+          return;
+        }
 
+        // If we have camera access, check for device orientation
+        if (hasCamera) {
           if (typeof DeviceOrientationEvent !== 'undefined') {
             const DeviceOrientationEventExt =
               DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
             if (
               typeof DeviceOrientationEventExt.requestPermission === 'function'
             ) {
-              const permission =
-                await DeviceOrientationEventExt.requestPermission();
-              if (permission === 'granted') {
-                setIsARSupported(true);
-                setARMode('arjs');
+              try {
+                const permission =
+                  await DeviceOrientationEventExt.requestPermission();
+                if (permission === 'granted') {
+                  setIsARSupported(true);
+                  setARMode('arjs');
+                  return;
+                } else {
+                  setIsARSupported(false);
+                  setStatus(
+                    'Motion sensor access is required for AR features. Please grant motion sensor permissions and reload the page.'
+                  );
+                  return;
+                }
+              } catch (e) {
+                setIsARSupported(false);
+                setStatus(
+                  'Failed to get motion sensor permissions. Please ensure motion sensors are enabled and try again.'
+                );
                 return;
               }
             } else {
+              // Device orientation doesn't need permission on this device
               setIsARSupported(true);
               setARMode('arjs');
               return;
             }
           }
 
+          // If device orientation is not available, fall back to basic WebRTC
           setIsARSupported(true);
           setARMode('webrtc');
-          return;
-        } catch (e) {
-          setIsARSupported(false);
-          setStatus(
-            'Camera access is required for AR features. Please grant camera permissions and try again.'
-          );
           return;
         }
 
