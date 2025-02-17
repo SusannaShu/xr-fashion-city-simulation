@@ -77,9 +77,10 @@ export const initializeAFrame = async (): Promise<void> => {
   try {
     // Load A-Frame script dynamically
     const script = document.createElement('script');
-    script.src = 'https://aframe.io/releases/1.4.2/aframe.min.js';
-    script.setAttribute('data-aframe-initialized', 'true');
-    document.head.appendChild(script);
+    const htmlScript = script as unknown as HTMLScriptElement;
+    htmlScript.src = 'https://aframe.io/releases/1.4.2/aframe.min.js';
+    htmlScript.setAttribute('data-aframe-initialized', 'true');
+    document.head.appendChild(htmlScript);
 
     // Wait for A-Frame to be loaded
     await new Promise<void>((resolve, reject) => {

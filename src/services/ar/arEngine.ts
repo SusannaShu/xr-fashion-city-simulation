@@ -268,6 +268,93 @@ export class AREngine {
       this.renderer.setSize(width, height);
     }
   }
+
+  public async placeModel(
+    model: ProcessedModel,
+    options: PlacementOptions = {}
+  ): Promise<void> {
+    if (!this.userLocation) {
+      throw new Error('User location not available');
+    }
+
+    const modelEntity = document.createElement('a-entity');
+
+    // If coordinates are provided, use them for location-based placement
+    if (options.coordinates) {
+      modelEntity.setAttribute(
+        'gps-projected-entity-place',
+        `latitude: ${options.coordinates.latitude}; ` +
+          `longitude: ${options.coordinates.longitude};`
+      );
+    } else {
+      // Default to current user location if no coordinates provided
+      modelEntity.setAttribute(
+        'gps-projected-entity-place',
+        `latitude: ${this.userLocation.latitude}; ` +
+          `longitude: ${this.userLocation.longitude};`
+      );
+    }
+
+    // Set initial scale and position
+    modelEntity.setAttribute('scale', '1 1 1');
+    modelEntity.setAttribute('position', '0 0 0');
+    modelEntity.setAttribute('look-at', '[gps-projected-camera]');
+
+    // Convert Three.js model to A-Frame entity
+    const modelScene = model.scene.clone();
+    if (options.position) modelScene.position.copy(options.position);
+    if (options.rotation) modelScene.rotation.copy(options.rotation);
+    if (options.scale) modelScene.scale.copy(options.scale);
+
+    // Add model to A-Frame entity
+    const modelWrapper = document.createElement('a-entity');
+    modelWrapper.object3D = modelScene;
+    modelEntity.appendChild(modelWrapper);
+
+    // Track model for management
+    this.models.set(model.metadata.id, modelScene);
+
+    // Add to A-Frame scene
+    const aframeScene = this.container?.querySelector('a-scene');
+    if (aframeScene) {
+      aframeScene.appendChild(modelEntity);
+    }
+  }
+
+  public removeModel(modelId: string): void {
+    const model = this.models.get(modelId);
+    if (model) {
+      // Find the parent A-Frame entity by traversing up from the model
+      let currentElement = model.parent;
+      while (currentElement && !(currentElement instanceof HTMLElement)) {
+        currentElement = currentElement.parent;
+      }
+
+      // Remove from DOM if we found the A-Frame entity
+      if (
+        currentElement instanceof HTMLElement &&
+        currentElement.parentElement
+      ) {
+        currentElement.parentElement.removeChild(currentElement);
+      }
+
+      this.models.delete(modelId);
+    }
+  }
+
+  public updateModelTransform(
+    modelId: string,
+    position?: THREE.Vector3,
+    rotation?: THREE.Euler,
+    scale?: THREE.Vector3
+  ): void {
+    const model = this.models.get(modelId);
+    if (model) {
+      if (position) model.position.copy(position);
+      if (rotation) model.rotation.copy(rotation);
+      if (scale) model.scale.copy(scale);
+    }
+  }
 }
 
 export default AREngine;
