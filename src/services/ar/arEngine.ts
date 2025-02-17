@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ProcessedModel } from '../model/ModelTransformer';
 import { LocationService, Location } from './locationService';
-import { initARjs } from './arjsSetup';
+import { initializeAFrame } from './aframe-init';
 
 export interface ARSceneOptions {
   container: HTMLElement;
@@ -29,6 +29,8 @@ export class AREngine {
   private container: HTMLElement | null = null;
   private locationService: LocationService = LocationService.getInstance();
   private userLocation: Location | null = null;
+  private drawingPlane: THREE.Mesh | null = null;
+  private isDrawingEnabled = false;
 
   private constructor() {
     this.scene = new THREE.Scene();
@@ -45,7 +47,10 @@ export class AREngine {
 
     // Add basic lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 1, 0);
     this.scene.add(ambientLight);
+    this.scene.add(directionalLight);
   }
 
   public static getInstance(): AREngine {
@@ -68,21 +73,20 @@ export class AREngine {
     }
   }
 
-  public static getCamera(): THREE.PerspectiveCamera {
-    const instance = AREngine.getInstance();
-    return instance.camera;
-  }
-
   public getScene(): THREE.Scene {
     return this.scene;
+  }
+
+  public getCamera(): THREE.PerspectiveCamera {
+    return this.camera;
   }
 
   async initialize(options: ARSceneOptions): Promise<void> {
     try {
       this.container = options.container;
 
-      // Initialize AR.js
-      await initARjs();
+      // Initialize A-Frame
+      await initializeAFrame();
 
       // Initialize user location tracking first
       await this.initializeLocationTracking();
@@ -91,7 +95,7 @@ export class AREngine {
         throw new Error('Could not get user location');
       }
 
-      // Create A-Frame scene for location-based AR
+      // Create A-Frame scene
       const aframeScene = document.createElement('a-scene');
       aframeScene.setAttribute('embedded', '');
       aframeScene.setAttribute('vr-mode-ui', 'enabled: false');
@@ -116,13 +120,32 @@ export class AREngine {
           'positionMinAccuracy: 100;'
       );
 
+      // Add drawing plane
+      const drawingPlane = document.createElement('a-entity');
+      drawingPlane.setAttribute('drawing-plane', '');
+      drawingPlane.setAttribute(
+        'geometry',
+        'primitive: plane; width: 100; height: 100'
+      );
+      drawingPlane.setAttribute('material', 'visible: false');
+      drawingPlane.setAttribute('position', '0 0 -5');
+      drawingPlane.setAttribute('rotation', '-90 0 0');
+
+      // Listen for drawing events
+      drawingPlane.addEventListener('draw-point', (event: any) => {
+        if (this.isDrawingEnabled && event.detail) {
+          this.handleDrawPoint(event.detail.point);
+        }
+      });
+
       aframeScene.appendChild(camera);
+      aframeScene.appendChild(drawingPlane);
 
       // Add the scene to container
       this.container.appendChild(aframeScene);
 
       // Set up renderer
-      this.renderer.setPixelRatio(1);
+      this.renderer.setPixelRatio(window.devicePixelRatio);
       this.renderer.setSize(window.innerWidth, window.innerHeight);
 
       // Handle window resize
@@ -186,128 +209,63 @@ export class AREngine {
     }
   }
 
-  async placeModel(
-    model: ProcessedModel,
-    options: PlacementOptions = {}
-  ): Promise<void> {
-    if (!this.userLocation) {
-      throw new Error('User location not available');
-    }
-
-    const modelEntity = document.createElement('a-entity');
-
-    // If coordinates are provided, use them for location-based placement
-    if (options.coordinates) {
-      modelEntity.setAttribute(
-        'gps-projected-entity-place',
-        `latitude: ${options.coordinates.latitude}; ` +
-          `longitude: ${options.coordinates.longitude};`
-      );
-    } else {
-      // Default to current user location if no coordinates provided
-      modelEntity.setAttribute(
-        'gps-projected-entity-place',
-        `latitude: ${this.userLocation.latitude}; ` +
-          `longitude: ${this.userLocation.longitude};`
-      );
-    }
-
-    // Set initial scale and position
-    modelEntity.setAttribute('scale', '1 1 1');
-    modelEntity.setAttribute('position', '0 0 0');
-    modelEntity.setAttribute('look-at', '[gps-projected-camera]');
-
-    // Convert Three.js model to A-Frame entity
-    const modelScene = model.scene.clone();
-    if (options.position) modelScene.position.copy(options.position);
-    if (options.rotation) modelScene.rotation.copy(options.rotation);
-    if (options.scale) modelScene.scale.copy(options.scale);
-
-    // Add model to A-Frame entity
-    const modelWrapper = document.createElement('a-entity');
-    modelWrapper.object3D = modelScene;
-    modelEntity.appendChild(modelWrapper);
-
-    // Track model for management
-    this.models.set(model.metadata.id, modelScene);
-
-    // Add to A-Frame scene
-    const aframeScene = this.container?.querySelector('a-scene');
-    if (aframeScene) {
-      aframeScene.appendChild(modelEntity);
-    }
+  private handleDrawPoint(point: THREE.Vector3): void {
+    // Create a small sphere to represent the drawing point
+    const geometry = new THREE.SphereGeometry(0.02);
+    const material = new THREE.MeshStandardMaterial({ color: 0xff69b4 }); // Hot pink
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.copy(point);
+    this.scene.add(sphere);
   }
 
-  removeModel(modelId: string): void {
-    const model = this.models.get(modelId);
-    if (model) {
-      // Find the parent A-Frame entity by traversing up from the model
-      let currentElement = model.parent;
-      while (currentElement && !(currentElement instanceof HTMLElement)) {
-        currentElement = currentElement.parent;
-      }
-
-      // Remove from DOM if we found the A-Frame entity
-      if (
-        currentElement instanceof HTMLElement &&
-        currentElement.parentElement
-      ) {
-        currentElement.parentElement.removeChild(currentElement);
-      }
-
-      this.models.delete(modelId);
-    }
-  }
-
-  updateModelTransform(
-    modelId: string,
-    position?: THREE.Vector3,
-    rotation?: THREE.Euler,
-    scale?: THREE.Vector3
-  ): void {
-    const model = this.models.get(modelId);
-    if (model) {
-      if (position) model.position.copy(position);
-      if (rotation) model.rotation.copy(rotation);
-      if (scale) model.scale.copy(scale);
-    }
-  }
-
-  private onWindowResize(): void {
-    if (this.container) {
-      // Update camera
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-
-      // Update renderer
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-      // Update A-Frame scene size
-      const aframeScene = this.container.querySelector('a-scene');
-      if (aframeScene) {
-        aframeScene.setAttribute(
-          'arjs',
-          'sourceType: webcam; ' +
-            'debugUIEnabled: false; ' +
-            'trackingMethod: best; ' +
-            'detectionMode: mono; ' +
-            'maxDetectionRate: 30;'
-        );
-      }
+  public setDrawingEnabled(enabled: boolean): void {
+    this.isDrawingEnabled = enabled;
+    if (this.drawingPlane) {
+      this.drawingPlane.visible = enabled;
     }
   }
 
   public dispose(): void {
-    // Clean up resources
-    this.renderer.dispose();
+    // Remove event listeners
     window.removeEventListener('resize', this.onWindowResize.bind(this));
 
-    // Remove A-Frame scene
+    // Dispose of Three.js resources
+    this.scene.traverse(object => {
+      if (object instanceof THREE.Mesh) {
+        object.geometry.dispose();
+        if (object.material instanceof THREE.Material) {
+          object.material.dispose();
+        } else if (Array.isArray(object.material)) {
+          object.material.forEach(material => material.dispose());
+        }
+      }
+    });
+
+    // Clear models
+    this.models.clear();
+
+    // Remove from DOM
     if (this.container) {
       const aframeScene = this.container.querySelector('a-scene');
       if (aframeScene) {
         this.container.removeChild(aframeScene);
       }
+    }
+
+    // Reset properties
+    this.container = null;
+    this.userLocation = null;
+    this.drawingPlane = null;
+    this.isDrawingEnabled = false;
+  }
+
+  private onWindowResize(): void {
+    if (this.container) {
+      const width = this.container.clientWidth;
+      const height = this.container.clientHeight;
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(width, height);
     }
   }
 }

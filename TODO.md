@@ -4,16 +4,16 @@
 
 ### Basic AR & Models (Priority 1)
 
-- [ ] Set up A-Frame AR scene
+- [x] Set up A-Frame AR scene
   - [x] Basic camera integration
-  - [ ] Permission handling
-  - [ ] Scene initialization
-  - [ ] Drawing interaction
+  - [x] Permission handling
+  - [x] Scene initialization
+  - [x] Drawing interaction
   - [ ] Model interaction
-- [ ] Implement drawing functionality
-  - [ ] Point-based drawing
-  - [ ] Hot pink color (#FF69B4)
-  - [ ] Touch interaction
+- [x] Implement drawing functionality
+  - [x] Point-based drawing
+  - [x] Hot pink color (#FF69B4)
+  - [x] Touch interaction
   - [ ] Basic persistence
 - [ ] Implement model functionality
   - [ ] Model upload component
@@ -24,10 +24,10 @@
 
 ### Location Features (Priority 2)
 
-- [ ] Basic geolocation
-  - [ ] Get user location
-  - [ ] Location permission handling
-  - [ ] Basic location tracking
+- [x] Basic geolocation
+  - [x] Get user location
+  - [x] Location permission handling
+  - [x] Basic location tracking
 - [ ] Content persistence
   - [ ] Firebase storage setup
   - [ ] Save drawing data
@@ -41,18 +41,18 @@
 
 ### User Experience (Priority 3)
 
-- [ ] Permission handling
-  - [ ] Camera access flow
-  - [ ] Location access flow
-  - [ ] Clear user feedback
+- [x] Permission handling
+  - [x] Camera access flow
+  - [x] Location access flow
+  - [x] Clear user feedback
 - [ ] Navigation
   - [ ] Map to AR transition
   - [ ] AR to Map transition
   - [ ] Loading states
   - [ ] Drawing/Model mode toggle
 - [ ] Error handling
-  - [ ] Permission denied
-  - [ ] Device not supported
+  - [x] Permission denied
+  - [x] Device not supported
   - [ ] Network issues
   - [ ] Model loading errors
 
