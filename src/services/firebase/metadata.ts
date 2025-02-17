@@ -102,6 +102,26 @@ export class ModelMetadataService {
     return distance <= radiusKm ? [this.susannaModel] : [];
   }
 
+  static async createMetadata(
+    metadata: Omit<ModelMetadata, 'id'>
+  ): Promise<string> {
+    // For now, just return a fixed ID since we're only using preloaded models
+    return 'susanna-shoes-preloaded';
+  }
+
+  static async updateMetadata(
+    id: string,
+    update: Partial<ModelMetadata>
+  ): Promise<void> {
+    // No-op for now since we're only using preloaded models
+    console.log('Updating metadata for model:', id, update);
+  }
+
+  static async getMetadata(id: string): Promise<ModelMetadata | null> {
+    // Only return the Susanna model for now
+    return id === 'susanna-shoes-preloaded' ? this.susannaModel : null;
+  }
+
   private static calculateDistance(
     lat1: number,
     lon1: number,

@@ -25,12 +25,14 @@ export class ModelLoader {
         name: options.name,
         designer: {
           id: options.creator,
-          name: options.creator, // TODO: Get actual designer name from user service
+          name: options.creator,
         },
         metadata: {
           format: options.file.type,
           size: options.file.size,
           version: '1.0',
+          scale: 1,
+          position: { x: 0, y: 0, z: 0 },
         },
       });
 
@@ -69,15 +71,20 @@ export class ModelLoader {
         version: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
-        location: options.location,
+        location: options.location || {
+          latitude: 48.8612,
+          longitude: 2.3364,
+        },
         designer: {
           id: options.creator,
-          name: options.creator, // TODO: Get actual designer name from user service
+          name: options.creator,
         },
         metadata: {
           format: options.file.type,
           size: options.file.size,
           version: '1.0',
+          scale: 1,
+          position: { x: 0, y: 0, z: 0 },
         },
       };
 
