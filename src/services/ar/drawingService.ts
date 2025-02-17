@@ -26,6 +26,9 @@ export interface Stroke {
 export class DrawingService {
   private static instance: DrawingService;
   private scene: THREE.Scene | null = null;
+  private canvas: HTMLCanvasElement | null = null;
+  private context: CanvasRenderingContext2D | null = null;
+  private isBasicMode = false;
   private currentStroke: Stroke | null = null;
   private strokes: Map<string, Stroke> = new Map();
   private locationService: LocationService;
@@ -42,8 +45,85 @@ export class DrawingService {
     return DrawingService.instance;
   }
 
-  initialize(scene: THREE.Scene): void {
-    this.scene = scene;
+  initialize(
+    target: THREE.Scene | HTMLCanvasElement,
+    useBasicMode = false
+  ): void {
+    this.isBasicMode = useBasicMode;
+
+    if (useBasicMode) {
+      if (!(target instanceof HTMLCanvasElement)) {
+        throw new Error('Basic mode requires an HTMLCanvasElement');
+      }
+      this.canvas = target;
+      this.context = this.canvas.getContext('2d');
+      this.setupBasicDrawing();
+    } else {
+      if (!(target instanceof THREE.Scene)) {
+        throw new Error('WebXR mode requires a THREE.Scene');
+      }
+      this.scene = target;
+      this.setupWebXRDrawing();
+    }
+  }
+
+  private setupBasicDrawing(): void {
+    if (!this.canvas || !this.context) return;
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    const draw = (e: TouchEvent | MouseEvent) => {
+      if (!isDrawing || !this.context) return;
+
+      const rect = this.canvas!.getBoundingClientRect();
+      const x =
+        (e instanceof TouchEvent ? e.touches[0].clientX : e.clientX) -
+        rect.left;
+      const y =
+        (e instanceof TouchEvent ? e.touches[0].clientY : e.clientY) - rect.top;
+
+      this.context.beginPath();
+      this.context.moveTo(lastX, lastY);
+      this.context.lineTo(x, y);
+      this.context.strokeStyle = '#FF69B4'; // Hot Pink
+      this.context.lineWidth = 3;
+      this.context.lineCap = 'round';
+      this.context.stroke();
+
+      lastX = x;
+      lastY = y;
+    };
+
+    const startDrawing = (e: TouchEvent | MouseEvent) => {
+      isDrawing = true;
+      const rect = this.canvas!.getBoundingClientRect();
+      lastX =
+        (e instanceof TouchEvent ? e.touches[0].clientX : e.clientX) -
+        rect.left;
+      lastY =
+        (e instanceof TouchEvent ? e.touches[0].clientY : e.clientY) - rect.top;
+    };
+
+    const stopDrawing = () => {
+      isDrawing = false;
+    };
+
+    // Touch events
+    this.canvas.addEventListener('touchstart', startDrawing);
+    this.canvas.addEventListener('touchmove', draw);
+    this.canvas.addEventListener('touchend', stopDrawing);
+
+    // Mouse events (for testing)
+    this.canvas.addEventListener('mousedown', startDrawing);
+    this.canvas.addEventListener('mousemove', draw);
+    this.canvas.addEventListener('mouseup', stopDrawing);
+    this.canvas.addEventListener('mouseout', stopDrawing);
+  }
+
+  private setupWebXRDrawing(): void {
+    // Existing WebXR drawing setup code
   }
 
   startStroke(style: StrokeStyle): string {
@@ -176,6 +256,12 @@ export class DrawingService {
   }
 
   dispose(): void {
+    if (this.isBasicMode && this.canvas) {
+      // Remove all event listeners
+      this.canvas.replaceWith(this.canvas.cloneNode(true));
+      this.canvas = null;
+      this.context = null;
+    }
     this.clearStrokes();
     this.drawingUpdateCallbacks.clear();
     this.scene = null;

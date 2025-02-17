@@ -62,32 +62,51 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           }
         }
 
-        // Check for iOS Safari Quick Look
+        // Check if we're on iOS
         const isIOS =
           /iPad|iPhone|iPod/.test(navigator.userAgent) &&
           !(window as any).MSStream;
         const isSafari = /^((?!chrome|android).)*safari/i.test(
           navigator.userAgent
         );
+
+        // For iOS Safari, use Quick Look
         if (isIOS && isSafari) {
           setIsARSupported(true);
           setARMode('quicklook');
           return;
         }
 
-        // Fallback to WebRTC-based AR if available
+        // For iOS Chrome or other browsers, try WebRTC fallback
         if (
           'mediaDevices' in navigator &&
           'getUserMedia' in navigator.mediaDevices
         ) {
-          setIsARSupported(true);
-          setARMode('webrtc');
-          return;
+          try {
+            // Test if we can actually access the camera
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'environment' },
+            });
+            stream.getTracks().forEach(track => track.stop()); // Clean up test stream
+
+            setIsARSupported(true);
+            setARMode('webrtc');
+            return;
+          } catch (e) {
+            console.warn('Camera access failed:', e);
+            if (isIOS) {
+              setIsARSupported(false);
+              setStatus(
+                'For the best AR experience on iOS, please use Safari browser. Chrome on iOS has limited AR capabilities.'
+              );
+              return;
+            }
+          }
         }
 
         setIsARSupported(false);
         setStatus(
-          'AR is not supported on this device. Try using Safari on iOS or Chrome on Android.'
+          'AR is not supported on this device. Try using Safari on iOS or Chrome on Android for the best experience.'
         );
       } catch (error) {
         console.error('AR support check error:', error);
@@ -192,9 +211,58 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   };
 
   const initializeWebRTC = async () => {
-    // WebRTC-based AR initialization
-    setStatus('Initializing camera-based AR...');
-    // TODO: Implement WebRTC-based AR initialization
+    try {
+      setStatus('Initializing camera-based AR...');
+
+      // Request camera access
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: window.innerWidth },
+          height: { ideal: window.innerHeight },
+        },
+      });
+
+      // Create video element for camera feed
+      const video = document.createElement('video');
+      const videoElement = video as unknown as HTMLVideoElement;
+      videoElement.srcObject = stream;
+      videoElement.className = styles.cameraFeed;
+      videoElement.playsInline = true;
+      videoElement.autoplay = true;
+      containerRef.current?.appendChild(videoElement);
+
+      // Initialize basic AR features
+      const drawingService = DrawingService.getInstance();
+      const locationService = LocationService.getInstance();
+
+      // Start location tracking
+      await locationService.startTracking();
+
+      // Set up drawing overlay
+      const canvas = document.createElement('canvas');
+      const canvasElement = canvas as unknown as HTMLCanvasElement;
+      canvasElement.className = styles.drawingOverlay;
+      canvasElement.width = window.innerWidth;
+      canvasElement.height = window.innerHeight;
+      containerRef.current?.appendChild(canvasElement);
+
+      // Initialize drawing service with basic mode
+      drawingService.initialize(canvasElement, true);
+
+      setStatus('Ready - Tap to start drawing');
+      setIsReady(true);
+      onStart?.();
+
+      return () => {
+        stream.getTracks().forEach(track => track.stop());
+        videoElement.remove();
+        canvasElement.remove();
+      };
+    } catch (error) {
+      console.error('WebRTC AR initialization error:', error);
+      throw error;
+    }
   };
 
   const cleanup = () => {
@@ -244,13 +312,23 @@ export const ARViewer: React.FC<ARViewerProps> = ({
               navigator.userAgent
             ) ? (
               <>
-                <p>
-                  Your mobile device or browser does not support AR features.
-                </p>
-                <p>
-                  Please use a device with AR capabilities (recent iPhone/iPad
-                  with Safari or Android with Chrome).
-                </p>
+                {/iPad|iPhone|iPod/.test(navigator.userAgent) &&
+                !/^((?!chrome|android).)*safari/i.test(navigator.userAgent) ? (
+                  <>
+                    <p>
+                      AR features are only available in Safari on iOS devices.
+                    </p>
+                    <p>Please open this page in Safari to use AR features.</p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Your mobile device or browser does not support AR
+                      features.
+                    </p>
+                    <p>Please use Safari on iOS or Chrome on Android.</p>
+                  </>
+                )}
               </>
             ) : (
               <>
