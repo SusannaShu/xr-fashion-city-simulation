@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ModelMetadataService } from '../../services/firebase/metadata';
@@ -36,6 +37,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
   const retryDelay = 5000;
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!mapContainer.current || isInitialized.current) return;
@@ -304,6 +306,9 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
         geolocateControl={geolocateControl.current}
         map={mapInstance.current}
       />
+      <button className={styles.arButton} onClick={() => navigate('/ar')}>
+        Start Air Graffiti
+      </button>
       {isLoading && (
         <div className={styles.loadingOverlay}>
           <LoadingSpinner size="large" theme="light" />

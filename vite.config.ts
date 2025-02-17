@@ -9,7 +9,11 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        jsxRuntime: 'classic',
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

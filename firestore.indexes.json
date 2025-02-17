@@ -1,0 +1,19 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "drawings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "location.lat",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

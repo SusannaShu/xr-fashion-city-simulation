@@ -1,22 +1,16 @@
 {
   "hosting": {
     "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   },
   "firestore": {
-    "indexes": {
-      "drawings": {
-        "fields": [
-          {
-            "fieldPath": "location.lat",
-            "order": "ASCENDING"
-          },
-          {
-            "fieldPath": "timestamp",
-            "order": "DESCENDING"
-          }
-        ]
-      }
-    }
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }

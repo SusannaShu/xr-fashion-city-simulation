@@ -73,39 +73,55 @@ export class AREngine {
   }
 
   async initialize(options: ARSceneOptions): Promise<void> {
-    this.container = options.container;
+    try {
+      this.container = options.container;
 
-    // Set up renderer
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.container.appendChild(this.renderer.domElement);
+      // Set up renderer
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.container.appendChild(this.renderer.domElement);
 
-    // Add AR button
-    const arButton = ARButton.createButton(this.renderer, {
-      requiredFeatures: ['hit-test', 'estimated-light'],
-      optionalFeatures: ['dom-overlay'],
-      domOverlay: { root: this.container },
-    });
-    this.container.appendChild(arButton);
+      // Add AR button
+      const arButton = ARButton.createButton(this.renderer, {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay', 'estimated-light'],
+        domOverlay: { root: this.container },
+      });
 
-    // Set up XR session start/end handlers
-    this.renderer.xr.addEventListener('sessionstart', () => {
-      console.log('AR session started');
-      this.setupXRLight();
-      options.onStart?.();
-    });
+      // Check if AR button creation was successful
+      if (!arButton) {
+        throw new Error(
+          'Failed to create AR button - AR session not supported'
+        );
+      }
 
-    this.renderer.xr.addEventListener('sessionend', () => {
-      console.log('AR session ended');
-      this.cleanup();
-      options.onEnd?.();
-    });
+      this.container.appendChild(arButton);
 
-    // Start animation loop
-    this.renderer.setAnimationLoop(this.render.bind(this));
+      // Set up XR session start/end handlers
+      this.renderer.xr.addEventListener('sessionstart', () => {
+        console.log('AR session started');
+        void this.setupXRLight();
+        options.onStart?.();
+      });
 
-    // Handle window resize
-    window.addEventListener('resize', this.onWindowResize.bind(this));
+      this.renderer.xr.addEventListener('sessionend', () => {
+        console.log('AR session ended');
+        this.cleanup();
+        options.onEnd?.();
+      });
+
+      // Start animation loop
+      this.renderer.setAnimationLoop(this.render.bind(this));
+
+      // Handle window resize
+      window.addEventListener('resize', this.onWindowResize.bind(this));
+    } catch (error) {
+      console.error('Failed to initialize AR:', error);
+      options.onError?.(
+        error instanceof Error ? error : new Error('Failed to initialize AR')
+      );
+      throw error;
+    }
   }
 
   private async setupXRLight(): Promise<void> {
