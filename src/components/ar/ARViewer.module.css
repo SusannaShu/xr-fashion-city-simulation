@@ -77,4 +77,26 @@
 
 .backButton:active {
   transform: scale(0.98);
+}
+
+.permissionButton {
+  margin: 20px 0;
+  padding: 12px 24px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+
+.permissionButton:hover {
+  background-color: #45a049;
+  transform: scale(1.02);
+}
+
+.permissionButton:active {
+  transform: scale(0.98);
 } 
