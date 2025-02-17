@@ -1,8 +1,7 @@
 .container {
   position: relative;
   width: 100%;
-  height: 100%;
-  min-height: 400px;
+  height: 100vh;
 }
 
 .map {
@@ -14,93 +13,66 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 2;
+  z-index: 1000;
 }
 
 .marker {
-  width: 32px;
-  height: 32px;
-  background-color: #FF69B4;
+  display: none;
+}
+
+.susannaMarker {
+  width: 30px;
+  height: 30px;
+  background-color: #FF1493;
   border: 2px solid white;
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
 }
 
-.marker:hover {
-  transform: scale(1.1);
-  background-color: #FF1493;
-}
-
-.marker.selected {
-  background-color: #4caf50;
+.susannaMarker:hover {
   transform: scale(1.2);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  background-color: #FF69B4;
 }
 
 .popup {
-  padding: 12px;
-  max-width: 200px;
-}
-
-.popup img {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 8px;
+  text-align: center;
+  padding: 10px;
 }
 
 .popup h3 {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  color: #333;
+  color: #FF1493;
+  margin: 0 0 5px 0;
 }
 
 .popup p {
   margin: 0;
   font-size: 14px;
-  color: #666;
-  line-height: 1.4;
 }
 
 .offlineIndicator {
   position: absolute;
   top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: #fff;
+  right: 20px;
   padding: 8px 16px;
+  background-color: #FF69B4;
+  color: white;
   border-radius: 20px;
   font-size: 14px;
   display: flex;
   align-items: center;
   gap: 8px;
-  z-index: 3;
 }
 
 .offlineIcon {
-  font-size: 16px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
+  font-size: 18px;
 }
 
 :global(.mapboxgl-ctrl-bottom-right) {
@@ -112,7 +84,7 @@
 }
 
 .arButton {
-  position: fixed;
+  position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
@@ -120,18 +92,66 @@
   background-color: #FF69B4;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 25px;
   font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
 }
 
 .arButton:hover {
   background-color: #FF1493;
+  transform: translateX(-50%) scale(1.05);
 }
 
 .arButton:active {
   transform: translateX(-50%) scale(0.98);
+}
+
+.controls {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  max-width: 90%;
+}
+
+.placementMode {
+  background: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin-top: 10px;
+}
+
+.placementMode p {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.placementMode button {
+  background: #ff69b4;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.placementMode button:hover {
+  background: #ff1493;
 } 

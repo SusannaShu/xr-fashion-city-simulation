@@ -125,6 +125,18 @@ export class AREngine {
           'positionMinAccuracy: 100;'
       );
 
+      // Add the Susanna model
+      const modelEntity = document.createElement('a-entity');
+      modelEntity.setAttribute('gltf-model-plus', {
+        src: '/models/susanna_heel.glb',
+        position: { x: 0, y: 2, z: -5 }, // Position above ground
+        scale: { x: 0.5, y: 0.5, z: 0.5 }, // Adjust scale as needed
+      });
+      modelEntity.setAttribute('gps-projected-entity-place', {
+        latitude: 48.8612,
+        longitude: 2.3364,
+      });
+
       // Add drawing plane
       const drawingPlane = document.createElement('a-entity');
       drawingPlane.setAttribute('drawing-plane', '');
@@ -145,6 +157,7 @@ export class AREngine {
 
       aframeScene.appendChild(camera);
       aframeScene.appendChild(drawingPlane);
+      aframeScene.appendChild(modelEntity);
 
       // Add the scene to container
       this.container.appendChild(aframeScene);

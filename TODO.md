@@ -9,15 +9,14 @@
   - [x] Permission handling
   - [x] Scene initialization
   - [x] Drawing interaction
-  - [ ] Model interaction
+  - [ ] Pre-loaded model viewing
 - [x] Implement drawing functionality
   - [x] Point-based drawing
   - [x] Hot pink color (#FF69B4)
   - [x] Touch interaction
   - [ ] Basic persistence
-- [ ] Implement model functionality
-  - [ ] Model upload component
-  - [ ] GLTF/GLB loading
+- [ ] Implement model viewing
+  - [ ] Load pre-loaded models
   - [ ] Basic transformations
   - [ ] Model placement
   - [ ] Preview generation
@@ -29,15 +28,14 @@
   - [x] Location permission handling
   - [x] Basic location tracking
 - [ ] Content persistence
-  - [ ] Firebase storage setup
+  - [x] Firebase storage setup
   - [ ] Save drawing data
-  - [ ] Save model data
   - [ ] Load nearby content
-- [ ] Map integration
-  - [ ] Show content locations
-  - [ ] Content type indicators
-  - [ ] Navigate to AR view
-  - [ ] Basic area visualization
+- [x] Map integration
+  - [x] Show content locations
+  - [x] Content type indicators
+  - [x] Navigate to AR view
+  - [x] Basic area visualization
 
 ### User Experience (Priority 3)
 
@@ -49,12 +47,12 @@
   - [ ] Map to AR transition
   - [ ] AR to Map transition
   - [ ] Loading states
-  - [ ] Drawing/Model mode toggle
+  - [ ] Drawing mode toggle
 - [ ] Error handling
   - [x] Permission denied
   - [x] Device not supported
   - [ ] Network issues
-  - [ ] Model loading errors
+  - [ ] Content loading errors
 
 ## 📅 Future Enhancements (Post-MVP)
 
@@ -62,11 +60,8 @@
 
 - [ ] Multiple colors for drawing
 - [ ] Line styles
-- [ ] Advanced model controls
-  - [ ] Animation support
-  - [ ] Custom materials
-  - [ ] Physics interactions
-- [ ] Undo/Redo
+- [ ] Model uploading functionality
+- [ ] Animation support
 
 ### Social Features
 

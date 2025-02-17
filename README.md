@@ -145,3 +145,41 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - SHEYOU Platform
 - SUSU Closet
+
+## Firebase Storage Setup
+
+### CORS Configuration
+
+1. Install the Firebase CLI if you haven't already:
+
+```bash
+npm install -g firebase-tools
+```
+
+2. Login to Firebase:
+
+```bash
+firebase login
+```
+
+3. Set up CORS for Firebase Storage:
+
+```bash
+# Navigate to the project directory
+cd virtual_space
+
+# Deploy the CORS configuration
+gsutil cors set cors.json gs://<YOUR-STORAGE-BUCKET>
+```
+
+Replace `<YOUR-STORAGE-BUCKET>` with your Firebase Storage bucket name (found in Firebase Console > Storage).
+
+### Storage Rules
+
+1. Deploy the storage rules:
+
+```bash
+firebase deploy --only storage
+```
+
+This will apply the rules defined in `storage.rules`.

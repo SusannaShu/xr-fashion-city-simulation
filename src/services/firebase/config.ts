@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAnalytics, Analytics } from 'firebase/analytics';
+import { getAuth, Auth } from 'firebase/auth';
 
 const env = import.meta.env;
 
@@ -30,13 +31,14 @@ if (!firebaseConfig.apiKey) {
 }
 
 const app = initializeApp(firebaseConfig);
+const auth: Auth = getAuth(app);
 const storage: FirebaseStorage = getStorage(app);
 const db: Firestore = getFirestore(app);
 const analytics: Analytics | null = firebaseConfig.measurementId
   ? getAnalytics(app)
   : null;
 
-export { app, storage, db, analytics };
+export { app, auth, storage, db, analytics };
 
 // Type definitions for Firebase data
 export interface DrawingData {

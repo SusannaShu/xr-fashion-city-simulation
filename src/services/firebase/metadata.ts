@@ -1,23 +1,8 @@
-import { db } from './config';
-import {
-  doc,
-  collection,
-  setDoc,
-  getDoc,
-  updateDoc,
-  getDocs,
-  query,
-  where,
-  DocumentReference,
-  DocumentData,
-  Firestore,
-} from 'firebase/firestore';
-import type { ModelData } from './config';
-
-export interface ModelMetadata extends ModelData {
-  version: number;
-  createdAt: Date;
-  updatedAt: Date;
+export interface ModelMetadata {
+  id: string;
+  name: string;
+  url: string;
+  thumbnailUrl: string;
   creator: string;
   tags: string[];
   description: string;
@@ -28,158 +13,72 @@ export interface ModelMetadata extends ModelData {
   };
   fileSize: number;
   format: string;
-  location?: {
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+  location: {
     latitude: number;
     longitude: number;
+  };
+  designer: {
+    id: string;
+    name: string;
+  };
+  metadata: {
+    format: string;
+    size: number;
+    version: string;
+    scale: number;
+    position: {
+      x: number;
+      y: number;
+      z: number;
+    };
   };
 }
 
 export class ModelMetadataService {
-  private static readonly COLLECTION_NAME = 'modelMetadata';
+  private static readonly susannaModel: ModelMetadata = {
+    id: 'susanna-shoes-preloaded',
+    name: 'Susanna Shoes',
+    url: '/models/susanna_heel.glb',
+    thumbnailUrl: '',
+    creator: 'SHEYOU',
+    tags: ['shoes', 'fashion', 'preloaded'],
+    description: 'Floating Susanna Shoes installation above the Louvre',
+    dimensions: {
+      width: 1,
+      height: 1,
+      depth: 1,
+    },
+    fileSize: 14000000,
+    format: 'model/gltf-binary',
+    version: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    location: {
+      latitude: 48.8612,
+      longitude: 2.3364,
+    },
+    designer: {
+      id: 'sheyou',
+      name: 'SHEYOU',
+    },
+    metadata: {
+      format: 'model/gltf-binary',
+      size: 14000000,
+      version: '1.0',
+      scale: 50,
+      position: {
+        x: 0,
+        y: 100,
+        z: 0,
+      },
+    },
+  };
 
-  static async createMetadata(
-    metadata: Omit<ModelMetadata, 'id'>
-  ): Promise<string> {
-    try {
-      console.log('Creating metadata:', metadata);
-      const metadataRef = doc(collection(db, this.COLLECTION_NAME));
-      const timestamp = new Date();
-
-      const metadataWithDefaults: ModelMetadata = {
-        ...metadata,
-        id: metadataRef.id,
-        version: 1,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      };
-
-      await setDoc(metadataRef, metadataWithDefaults);
-      console.log('Metadata created successfully with ID:', metadataRef.id);
-      return metadataRef.id;
-    } catch (error) {
-      console.error('Error creating metadata:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('permission-denied')) {
-          throw new Error(
-            'Permission denied. Please check Firestore security rules.'
-          );
-        } else if (error.message.includes('unavailable')) {
-          throw new Error(
-            'Firestore service is currently unavailable. Please try again later.'
-          );
-        }
-      }
-      throw error;
-    }
-  }
-
-  static async getMetadata(modelId: string): Promise<ModelMetadata | null> {
-    try {
-      console.log('Fetching metadata for model:', modelId);
-      const metadataRef = doc(db, this.COLLECTION_NAME, modelId);
-      const metadataSnap = await getDoc(metadataRef);
-
-      if (!metadataSnap.exists()) {
-        console.log('No metadata found for model:', modelId);
-        return null;
-      }
-
-      const data = {
-        ...(metadataSnap.data() as ModelMetadata),
-        createdAt: new Date(metadataSnap.data().createdAt.seconds * 1000),
-        updatedAt: new Date(metadataSnap.data().updatedAt.seconds * 1000),
-      };
-      console.log('Metadata retrieved successfully:', data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching metadata:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('permission-denied')) {
-          throw new Error(
-            'Permission denied. Please check Firestore security rules.'
-          );
-        } else if (error.message.includes('unavailable')) {
-          throw new Error(
-            'Firestore service is currently unavailable. Please try again later.'
-          );
-        }
-      }
-      throw error;
-    }
-  }
-
-  static async updateMetadata(
-    modelId: string,
-    updates: Partial<Omit<ModelMetadata, 'id' | 'createdAt' | 'version'>>
-  ): Promise<void> {
-    try {
-      console.log(
-        'Updating metadata for model:',
-        modelId,
-        'with updates:',
-        updates
-      );
-      const metadataRef = doc(db, this.COLLECTION_NAME, modelId);
-      const currentMetadata = await this.getMetadata(modelId);
-
-      if (!currentMetadata) {
-        throw new Error(`Model metadata not found for ID: ${modelId}`);
-      }
-
-      await updateDoc(metadataRef, {
-        ...updates,
-        version: currentMetadata.version + 1,
-        updatedAt: new Date(),
-      });
-      console.log('Metadata updated successfully');
-    } catch (error) {
-      console.error('Error updating metadata:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('permission-denied')) {
-          throw new Error(
-            'Permission denied. Please check Firestore security rules.'
-          );
-        } else if (error.message.includes('unavailable')) {
-          throw new Error(
-            'Firestore service is currently unavailable. Please try again later.'
-          );
-        }
-      }
-      throw error;
-    }
-  }
-
-  static async findModelsByTags(tags: string[]): Promise<ModelMetadata[]> {
-    try {
-      console.log('Finding models by tags:', tags);
-      const q = query(
-        collection(db, this.COLLECTION_NAME),
-        where('tags', 'array-contains-any', tags)
-      );
-
-      const querySnapshot = await getDocs(q);
-      const models = querySnapshot.docs.map(doc => ({
-        ...(doc.data() as ModelMetadata),
-        createdAt: new Date(doc.data().createdAt.seconds * 1000),
-        updatedAt: new Date(doc.data().updatedAt.seconds * 1000),
-      }));
-      console.log('Found models:', models);
-      return models;
-    } catch (error) {
-      console.error('Error finding models by tags:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('permission-denied')) {
-          throw new Error(
-            'Permission denied. Please check Firestore security rules.'
-          );
-        } else if (error.message.includes('unavailable')) {
-          throw new Error(
-            'Firestore service is currently unavailable. Please try again later.'
-          );
-        }
-      }
-      throw error;
-    }
+  static async initializePreloadedModels(): Promise<void> {
+    console.log('Preloaded Susanna model initialized');
   }
 
   static async findModelsByLocation(
@@ -187,53 +86,20 @@ export class ModelMetadataService {
     longitude: number,
     radiusKm: number
   ): Promise<ModelMetadata[]> {
-    try {
-      console.log('Finding models by location:', {
-        latitude,
-        longitude,
-        radiusKm,
-      });
-      // TODO: Implement geospatial query once we set up geolocation indexing
-      const q = query(collection(db, this.COLLECTION_NAME));
-      const querySnapshot = await getDocs(q);
+    console.log('Finding models by location:', {
+      latitude,
+      longitude,
+      radiusKm,
+    });
 
-      // Basic distance calculation (this should be moved to a proper geospatial query)
-      const models = querySnapshot.docs
-        .map(doc => ({
-          ...(doc.data() as ModelMetadata),
-          createdAt: new Date(doc.data().createdAt.seconds * 1000),
-          updatedAt: new Date(doc.data().updatedAt.seconds * 1000),
-        }))
-        .filter(metadata => {
-          if (!metadata.location) return false;
+    const distance = this.calculateDistance(
+      latitude,
+      longitude,
+      this.susannaModel.location.latitude,
+      this.susannaModel.location.longitude
+    );
 
-          const distance = this.calculateDistance(
-            latitude,
-            longitude,
-            metadata.location.latitude,
-            metadata.location.longitude
-          );
-
-          return distance <= radiusKm;
-        });
-
-      console.log('Found models:', models);
-      return models;
-    } catch (error) {
-      console.error('Error finding models by location:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('permission-denied')) {
-          throw new Error(
-            'Permission denied. Please check Firestore security rules.'
-          );
-        } else if (error.message.includes('unavailable')) {
-          throw new Error(
-            'Firestore service is currently unavailable. Please try again later.'
-          );
-        }
-      }
-      throw error;
-    }
+    return distance <= radiusKm ? [this.susannaModel] : [];
   }
 
   private static calculateDistance(

@@ -82,38 +82,67 @@ export const initializeAFrame = async (): Promise<void> => {
     htmlScript.setAttribute('data-aframe-initialized', 'true');
     htmlScript.crossOrigin = 'anonymous';
 
-    // Add error handling for script loading
-    htmlScript.onerror = () => {
-      console.error('Failed to load A-Frame script');
-      throw new Error('Failed to load A-Frame script');
-    };
+    // Load AR.js with location-based support
+    const arjsScript = document.createElement('script');
+    const arjsHtmlScript = arjsScript as unknown as HTMLScriptElement;
+    arjsHtmlScript.src =
+      'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js';
+    arjsHtmlScript.setAttribute('data-arjs-initialized', 'true');
+    arjsHtmlScript.crossOrigin = 'anonymous';
+
+    // Load location-based components
+    const locationScript = document.createElement('script');
+    const locationHtmlScript = locationScript as unknown as HTMLScriptElement;
+    locationHtmlScript.src =
+      'https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js';
+    locationHtmlScript.setAttribute('data-location-initialized', 'true');
+    locationHtmlScript.crossOrigin = 'anonymous';
 
     document.head.appendChild(htmlScript);
+    document.head.appendChild(arjsHtmlScript);
+    document.head.appendChild(locationHtmlScript);
 
-    // Wait for A-Frame to be loaded with timeout
-    await new Promise<void>((resolve, reject) => {
-      const maxAttempts = 50;
-      let attempts = 0;
-
-      const checkInit = () => {
-        if (window.AFRAME && window.AFRAME.components) {
-          console.log('A-Frame loaded successfully');
-          resolve();
-        } else if (attempts >= maxAttempts) {
-          reject(
-            new Error('Failed to initialize A-Frame: timeout after 5 seconds')
-          );
-        } else {
-          attempts++;
-          setTimeout(checkInit, 100);
-        }
-      };
-
-      checkInit();
-    });
+    // Wait for all scripts to load
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        htmlScript.onload = () => resolve();
+        htmlScript.onerror = () =>
+          reject(new Error('Failed to load A-Frame script'));
+      }),
+      new Promise<void>((resolve, reject) => {
+        arjsHtmlScript.onload = () => resolve();
+        arjsHtmlScript.onerror = () =>
+          reject(new Error('Failed to load AR.js script'));
+      }),
+      new Promise<void>((resolve, reject) => {
+        locationHtmlScript.onload = () => resolve();
+        locationHtmlScript.onerror = () =>
+          reject(new Error('Failed to load location component script'));
+      }),
+    ]);
 
     // Register custom components
     if (window.AFRAME) {
+      // Model component for handling 3D models
+      window.AFRAME.registerComponent('gltf-model-plus', {
+        schema: {
+          src: { type: 'string' },
+          position: { type: 'vec3' },
+          scale: { type: 'vec3', default: { x: 1, y: 1, z: 1 } },
+        },
+        init: function () {
+          const data = this.data;
+          const el = this.el;
+
+          // Load the model
+          el.setAttribute('gltf-model', data.src);
+
+          // Set position and scale
+          el.setAttribute('position', data.position);
+          el.setAttribute('scale', data.scale);
+        },
+      });
+
       // Drawing component for handling drawing interactions
       window.AFRAME.registerComponent('drawing-plane', {
         init: function (this: AFrameComponent) {

@@ -2,7 +2,7 @@
 
 ## 🎯 MVP Focus
 
-Simplified location-based AR experience using A-Frame, supporting both drawing and 3D models
+Simplified location-based AR experience using A-Frame, supporting drawing and viewing pre-loaded models
 
 ### Current Codebase Structure
 
@@ -24,11 +24,7 @@ virtual_space/
 │   │   │   └── LocationPicker.module.css # Picker styles
 │   │   ├── model/
 │   │   │   ├── ModelViewer.tsx        # 3D model viewer
-│   │   │   ├── ModelViewer.module.css # Viewer styles
-│   │   │   ├── ModelUploader.tsx      # Model upload handling
-│   │   │   ├── ModelUploader.module.css # Uploader styles
-│   │   │   ├── ModelList.tsx          # Model list/gallery
-│   │   │   └── ModelInteraction.tsx   # Model interactions
+│   │   │   └── ModelViewer.module.css # Viewer styles
 │   │   └── shared/
 │   │       ├── ErrorBoundary.tsx      # Error handling
 │   │       ├── ErrorBoundary.module.css # Error styles
@@ -49,10 +45,8 @@ virtual_space/
 │   │   │   ├── config.ts             # Firebase configuration
 │   │   │   ├── storage.ts            # File storage handling
 │   │   │   ├── sync.ts              # Real-time synchronization
-│   │   │   ├── metadata.ts          # Content metadata handling
 │   │   │   └── database.ts          # Database operations
 │   │   └── model/
-│   │       ├── ModelTransformer.ts   # Model transformations
 │   │       └── ModelLoader.ts        # Model loading & processing
 │   ├── store/                        # State management
 │   │   ├── index.ts                 # Store configuration
@@ -70,56 +64,11 @@ virtual_space/
 │   │   └── aframe.d.ts             # A-Frame type definitions
 │   ├── config/                       # Configuration files
 │   │   └── firebase-config.d.ts    # Firebase config types
-│   ├── _reference_js/               # Reference implementations
-│   │   ├── app.js                  # Original app implementation
-│   │   ├── modelList.js            # Model list reference
-│   │   ├── modelInteraction.js     # Model interaction reference
-│   │   └── firebase-config.js      # Firebase config reference
 │   ├── App.tsx                      # Main application component
 │   ├── App.css                      # App-specific styles
 │   ├── main.tsx                     # Application entry point
 │   ├── config.ts                    # Global configuration
 │   └── styles.css                   # Global styles
-├── .github/workflows/              # GitHub Actions
-│   ├── firebase-hosting-merge.yml        # Production deployment
-│   └── firebase-hosting-pull-request.yml # PR previews
-├── models/                         # 3D model assets
-├── docs/                          # Documentation
-│   ├── STRUCTURE_PLAN.md          # Project structure
-│   ├── TODO.md                    # Development tasks
-│   ├── README.md                  # Project overview
-│   └── CONTRIBUTING.md            # Contribution guide
-├── Development Config
-│   ├── .vscode/                   # VS Code settings
-│   ├── .husky/                    # Git hooks
-│   ├── .eslintrc.json            # ESLint configuration
-│   ├── .prettierrc               # Prettier configuration
-│   ├── .lintstagedrc             # Lint-staged config
-│   └── .gitignore                # Git ignore rules
-├── Build Config
-│   ├── package.json              # NPM configuration
-│   ├── package-lock.json         # Dependency lock
-│   ├── tsconfig.json            # TypeScript config
-│   ├── tsconfig.node.json       # Node TypeScript config
-│   └── vite.config.ts           # Vite configuration
-├── Firebase Config
-│   ├── .firebase/               # Firebase cache
-│   ├── firebase.json            # Firebase configuration
-│   ├── firestore.rules          # Firestore security rules
-│   ├── firestore.indexes.json   # Firestore indexes
-│   └── .firebaserc             # Firebase project config
-├── Environment
-│   ├── .env                     # Default environment
-│   ├── .env.local              # Local overrides
-│   └── .env.example            # Environment template
-├── Build Output
-│   ├── dist/                   # Production build
-│   └── node_modules/           # Dependencies
-├── Web Entry
-│   ├── index.html             # Main entry point
-│   ├── 404.html              # Error page
-│   └── susu_doodle_logo.png  # Logo asset
-└── config.js                  # Legacy configuration
 ```
 
 ### Component Features
@@ -153,7 +102,7 @@ virtual_space/
 #### AR Experience
 
 - Basic 3D drawing in AR space
-- Simple model placement
+- View pre-loaded models
 - Camera view with AR overlay
 - Touch interaction
 - Location awareness
@@ -167,7 +116,7 @@ virtual_space/
 
 #### Model Features
 
-- GLTF/GLB support
+- View pre-loaded GLTF/GLB models
 - Basic transformations
 - Location anchoring
 - Simple interactions
@@ -184,7 +133,6 @@ virtual_space/
 #### Firebase Services
 
 - Content storage
-- Metadata management
 - Location data
 - Basic persistence
 
@@ -199,7 +147,6 @@ virtual_space/
 
 - Model loading
 - Basic transformations
-- Preview generation
 - Format handling
 
 ### Technical Stack
@@ -214,7 +161,7 @@ virtual_space/
 1. Set up basic A-Frame AR scene
 2. Implement location tracking
 3. Add drawing capabilities
-4. Enable model loading
+4. Enable pre-loaded model viewing
 5. Integrate with map
 6. Add content persistence
 
@@ -226,7 +173,7 @@ virtual_space/
 
    - Multiple colors
    - Line styles
-   - Advanced model controls
+   - Model uploading
    - Animation support
 
 2. Social Features
@@ -251,17 +198,16 @@ virtual_space/
 ### AR Experience
 
 - Location-based AR viewing
-- 3D model placement
+- Pre-loaded model viewing
 - Real-time drawing
 - Gesture controls
 - Environment mapping
 
 ### Model Management
 
-- Model upload and storage
-- Version control
-- Format conversion
-- Optimization pipeline
+- Pre-loaded model viewing
+- Basic transformations
+- Location persistence
 - Preview generation
 
 ### Location Services
@@ -291,21 +237,12 @@ virtual_space/
 
 ## 🔌 Integrations
 
-### Firebase Integration (3D Models)
+### Firebase Integration
 
-- Cloud storage for models
-- Real-time model sync
-- Model metadata
-- Asset optimization
-- Version control
-
-### Strapi Integration
-
-- Authentication
-- User management
-- Profile data
-- Activity tracking
-- Permissions management
+- Content storage
+- Real-time sync
+- Basic persistence
+- Asset serving
 
 ### External Services
 
@@ -317,21 +254,12 @@ virtual_space/
 
 ## 📱 User Interfaces
 
-### Designer Dashboard
-
-- Model management
-- Experience creation
-- Analytics view
-- User management
-- Content moderation
-
 ### User Experience
 
 - AR viewer
-- Model interaction
+- Model viewing
 - Drawing tools
 - Location browser
-- Social features
 
 ## 🔒 Security & Performance
 
@@ -339,7 +267,6 @@ virtual_space/
 
 - Authentication
 - Data validation
-- Asset verification
 - Access control
 - Rate limiting
 
@@ -418,80 +345,3 @@ virtual_space/
   - Load balancing
   - Database sharding
   - Cache distribution
-
-## ✅ Completed Setup
-
-### Configuration
-
-```typescript
-// Environment configuration
-├── .env                        # Environment variables
-├── src/
-│   └── config.ts              # Typed configuration
-```
-
-### AR Services
-
-#### AREngine Service
-
-- WebXR session management
-- AR.js context handling
-- Scene management
-- Model placement
-- Camera calibration
-- Location-based positioning
-- Device orientation tracking
-- Permission state management
-  - Camera access handling
-  - Motion sensor access
-  - Permission persistence
-  - Error recovery
-
-#### LocationService
-
-- Geolocation tracking
-- Spatial anchoring
-- Location persistence
-- Proximity detection
-- Area activation
-- Location-based content loading
-
-#### DrawingService
-
-- 3D drawing capabilities
-- Stroke management
-- Real-time sync
-- Drawing persistence
-- Multi-browser compatibility
-- Canvas/WebGL rendering
-- Touch/motion input handling
-
-### Browser Support Strategy
-
-#### iOS Devices
-
-- Safari: WebXR (primary)
-- Chrome/Firefox: AR.js with location-based AR
-- Fallback: WebRTC camera feed with basic AR
-
-#### Android Devices
-
-- Chrome: WebXR (primary)
-- Firefox/Samsung: AR.js with location-based AR
-- Fallback: WebRTC camera feed with basic AR
-
-#### Permission Management
-
-- Camera access workflow
-  - Permission request
-  - State persistence
-  - Error handling
-  - Recovery options
-- Motion sensor access
-  - iOS-specific handling
-  - Permission request
-  - State management
-- Location services
-  - Permission request
-  - Accuracy levels
-  - State management

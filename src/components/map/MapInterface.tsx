@@ -24,8 +24,8 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
   onMarkerClick,
   onMapClick,
   selectedModelId,
-  initialCenter = [2.3364, 48.861], // Louvre Museum coordinates
-  initialZoom = 16, // Increased zoom level for better 3D building visibility
+  initialCenter = [2.3364, 48.8612], // Louvre Pyramid coordinates
+  initialZoom = 15, // Start with a wider view
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
@@ -45,6 +45,9 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
     console.log('Initializing map interface');
     isInitialized.current = true;
 
+    // Initialize preloaded models
+    void ModelMetadataService.initializePreloadedModels();
+
     // Initialize map
     mapInstance.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -52,7 +55,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
       center: initialCenter,
       zoom: initialZoom,
       pitch: 60,
-      bearing: -30,
+      bearing: 0, // Changed to 0 for better orientation
       antialias: true,
     });
 
@@ -60,6 +63,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
 
     // Enable 3D buildings and apply grayscale style
     map.on('style.load', () => {
+      console.log('Map style loaded');
       // Add grayscale filter to the map
       const grayscaleFilter = [
         'grayscale',
@@ -123,16 +127,12 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
 
     // Trigger geolocation on map load
     map.on('load', () => {
+      console.log('Map loaded');
       setIsLoading(false);
       void loadNearbyModels();
     });
 
-    map.on('click', e => {
-      onMapClick?.({
-        lng: e.lngLat.lng,
-        lat: e.lngLat.lat,
-      });
-    });
+    map.on('click', handleMapClick);
 
     // Listen for online/offline events
     window.addEventListener('online', handleOnline);
@@ -174,13 +174,15 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
       const center = bounds.getCenter();
       const radius = calculateRadius(bounds);
 
+      console.log('Loading models with center:', center, 'and radius:', radius);
       const models = await ModelMetadataService.findModelsByLocation(
         center.lat,
         center.lng,
         radius
       );
+      console.log('Found models:', models);
 
-      setRetryCount(0); // Reset retry count on success
+      setRetryCount(0);
       setIsOffline(false);
       updateMarkers(models);
     } catch (error) {
@@ -215,6 +217,8 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
     const map = mapInstance.current;
     if (!map) return;
 
+    console.log('Updating markers with models:', models);
+
     // Remove old markers
     markers.current.forEach(marker => marker.remove());
     markers.current.clear();
@@ -223,26 +227,50 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
     models.forEach(model => {
       if (!model.location) return;
 
-      const markerElement = document.createElement('div');
-      markerElement.className = styles.marker;
-      if (model.id === selectedModelId) {
-        markerElement.classList.add(styles.selected);
-      }
+      console.log(
+        'Creating marker for model:',
+        model.name,
+        'at location:',
+        model.location
+      );
 
-      const marker = new mapboxgl.Marker(markerElement)
+      const markerElement = document.createElement('div');
+      markerElement.className =
+        model.name === 'Susanna Shoes' ? styles.susannaMarker : styles.marker;
+
+      // Create marker at an elevated position for the Susanna model
+      const marker = new mapboxgl.Marker({
+        element: markerElement,
+        anchor: 'bottom',
+        offset: [0, -20],
+      })
         .setLngLat([model.location.longitude, model.location.latitude])
         .setPopup(
-          new mapboxgl.Popup({ offset: 25 }).setHTML(`
-              <div class="${styles.popup}">
-                <img src="${model.thumbnailUrl}" alt="${model.name}" />
-                <h3>${model.name}</h3>
-                <p>${model.description || 'No description'}</p>
-              </div>
-            `)
+          new mapboxgl.Popup({
+            offset: 25,
+            closeButton: false,
+            maxWidth: '300px',
+          }).setHTML(`
+            <div class="${styles.popup}">
+              <h3>${model.name}</h3>
+              <p>${model.description || 'No description'}</p>
+            </div>
+          `)
         )
         .addTo(map);
 
       marker.getElement().addEventListener('click', () => {
+        // Fly to the marker with a dramatic zoom animation
+        map.flyTo({
+          center: [model.location.longitude, model.location.latitude],
+          zoom: 19,
+          pitch: 60,
+          bearing: 0,
+          duration: 2000,
+          essential: true,
+        });
+
+        marker.togglePopup();
         onMarkerClick?.(model.id);
       });
 
@@ -298,9 +326,33 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
     onMapClick?.(location);
   };
 
+  const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
+    onMapClick?.({
+      lng: e.lngLat.lng,
+      lat: e.lngLat.lat,
+    });
+  };
+
+  // Update map click handler in useEffect
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    mapInstance.current.on('click', handleMapClick);
+
+    return () => {
+      mapInstance.current?.off('click', handleMapClick);
+    };
+  }, []);
+
   return (
     <div className={styles.container}>
-      <div ref={mapContainer} className={styles.map} />
+      <div ref={mapContainer} className={styles.map}>
+        {isLoading && (
+          <div className={styles.loadingOverlay}>
+            <LoadingSpinner size="large" theme="light" />
+          </div>
+        )}
+      </div>
       <LocationPicker
         onLocationSelect={handleLocationSelect}
         geolocateControl={geolocateControl.current}
@@ -309,11 +361,6 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
       <button className={styles.arButton} onClick={() => navigate('/ar')}>
         Start Air Graffiti
       </button>
-      {isLoading && (
-        <div className={styles.loadingOverlay}>
-          <LoadingSpinner size="large" theme="light" />
-        </div>
-      )}
       {isOffline && (
         <div className={styles.offlineIndicator}>
           <span className={styles.offlineIcon}>📡</span>
