@@ -1,20 +1,12 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  Suspense,
-} from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { AREngine } from '../../services/ar/arEngine';
 import { LocationService } from '../../services/ar/locationService';
 import { DrawingService } from '../../services/ar/drawingService';
 import { ProcessedModel } from '../../services/model/ModelTransformer';
 import { ModelMetadata } from '../../services/firebase/metadata';
+import { DrawingCanvas } from './DrawingCanvas';
 import styles from './ARViewer.module.css';
-
-// Lazy load the AR Scene component
-const ARScene = React.lazy(() => import('./ARScene'));
 
 interface ARViewerProps {
   onStart?: () => void;
@@ -47,6 +39,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const hasCheckedRef = useRef(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Development mode detection
   const isDev = process.env.NODE_ENV === 'development';
@@ -82,23 +75,18 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     logDebug('Cleaning up AR resources');
     const locationService = LocationService.getInstance();
     const drawingService = DrawingService.getInstance();
-    const arEngine = AREngine.getInstance();
-
-    locationService.stopTracking();
-    drawingService.dispose();
-    arEngine.dispose();
+    AREngine.cleanup();
   }, [logDebug]);
 
   const initializeAR = useCallback(async () => {
+    if (!containerRef.current) return;
+
     try {
       logDebug('Initializing AR...');
-      const arEngine = AREngine.getInstance();
       const drawingService = DrawingService.getInstance();
       const locationService = LocationService.getInstance();
-
-      logDebug('Initializing AR engine...');
-      await arEngine.initialize({
-        container: containerRef.current ?? document.createElement('div'),
+      const arEngine = await AREngine.initialize({
+        container: containerRef.current,
         onStart: () => {
           logDebug('AR session started');
           setStatus('AR session active - Move your phone to draw in space');
@@ -123,6 +111,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       await locationService.startTracking();
 
       logDebug('AR initialization complete');
+      setIsInitialized(true);
     } catch (error) {
       const err =
         error instanceof Error ? error : new Error('Unknown error occurred');
@@ -281,11 +270,13 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
   return (
     <div ref={containerRef} className={styles.container}>
-      {isARSupported && !showMotionPermissionButton && (
-        <Suspense fallback={<div>Loading AR...</div>}>
-          <ARScene />
-        </Suspense>
-      )}
+      <div className={styles.arViewer}>
+        <div className={styles.arScene}>
+          {isInitialized && (
+            <DrawingCanvas camera={AREngine.getCamera()} isActive={true} />
+          )}
+        </div>
+      </div>
 
       <div
         className={styles.statusOverlay}

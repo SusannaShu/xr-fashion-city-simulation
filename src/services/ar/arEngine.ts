@@ -1,11 +1,7 @@
 import * as THREE from 'three';
-import { ARButton } from 'three/examples/jsm/webxr/ARButton';
-import { XREstimatedLight } from 'three/examples/jsm/webxr/XREstimatedLight';
 import { ProcessedModel } from '../model/ModelTransformer';
-import { LocationService } from './locationService';
-
-// AR.js types
-declare const THREEx: any;
+import { LocationService, Location } from './locationService';
+import { initARjs } from './arjsSetup';
 
 export interface ARSceneOptions {
   container: HTMLElement;
@@ -18,35 +14,23 @@ export interface PlacementOptions {
   position?: THREE.Vector3;
   rotation?: THREE.Euler;
   scale?: THREE.Vector3;
-  hitTestSource?: XRHitTestSource;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export class AREngine {
-  private static instance: AREngine;
-  private renderer: THREE.WebGLRenderer;
+  private static instance: AREngine | null = null;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
-  private arToolkitSource: any;
-  private arToolkitContext: any;
-  private markerControls: any;
-  private xrLight: XREstimatedLight | null = null;
+  private renderer: THREE.WebGLRenderer;
   private models: Map<string, THREE.Group> = new Map();
-  private hitTestSourceRequested = false;
-  private hitTestSource: XRHitTestSource | null = null;
-  private reticle: THREE.Mesh;
   private container: HTMLElement | null = null;
-  private isUsingARjs = false;
   private locationService: LocationService = LocationService.getInstance();
-  private initialLatitude = 0;
-  private initialLongitude = 0;
+  private userLocation: Location | null = null;
 
   private constructor() {
-    // Initialize Three.js components
-    this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-    });
-
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       70,
@@ -54,30 +38,42 @@ export class AREngine {
       0.01,
       1000
     );
-
-    // Create reticle for placement
-    const reticleGeometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(
-      -Math.PI / 2
-    );
-    const reticleMaterial = new THREE.MeshBasicMaterial();
-    this.reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
-    this.reticle.matrixAutoUpdate = false;
-    this.reticle.visible = false;
-    this.scene.add(this.reticle);
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
 
     // Add basic lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
   }
 
-  static getInstance(): AREngine {
+  public static getInstance(): AREngine {
     if (!AREngine.instance) {
       AREngine.instance = new AREngine();
     }
     return AREngine.instance;
   }
 
-  getScene(): THREE.Scene {
+  public static async initialize(options: ARSceneOptions): Promise<AREngine> {
+    const instance = AREngine.getInstance();
+    await instance.initialize(options);
+    return instance;
+  }
+
+  public static cleanup(): void {
+    if (AREngine.instance) {
+      AREngine.instance.dispose();
+      AREngine.instance = null;
+    }
+  }
+
+  public static getCamera(): THREE.PerspectiveCamera {
+    const instance = AREngine.getInstance();
+    return instance.camera;
+  }
+
+  public getScene(): THREE.Scene {
     return this.scene;
   }
 
@@ -85,263 +81,180 @@ export class AREngine {
     try {
       this.container = options.container;
 
-      // Set up renderer
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.container.appendChild(this.renderer.domElement);
+      // Initialize AR.js
+      await initARjs();
 
-      // Check if we should use AR.js
-      const isIOS =
-        /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-        !(window as any).MSStream;
-      const isSafari = /^((?!chrome|android).)*safari/i.test(
-        navigator.userAgent
+      // Initialize user location tracking first
+      await this.initializeLocationTracking();
+
+      if (!this.userLocation) {
+        throw new Error('Could not get user location');
+      }
+
+      // Create A-Frame scene for location-based AR
+      const aframeScene = document.createElement('a-scene');
+      aframeScene.setAttribute('embedded', '');
+      aframeScene.setAttribute('vr-mode-ui', 'enabled: false');
+      aframeScene.setAttribute(
+        'arjs',
+        'sourceType: webcam; ' +
+          'debugUIEnabled: false; ' +
+          'trackingMethod: best; ' +
+          'detectionMode: mono; ' +
+          'maxDetectionRate: 30;'
       );
 
-      if (!isSafari || !navigator.xr) {
-        // Use AR.js for non-Safari browsers or when WebXR is not available
-        await this.initializeARjs(options);
-      } else {
-        // Use WebXR for Safari
-        await this.initializeWebXR(options);
-      }
+      // Add camera entity with location tracking
+      const camera = document.createElement('a-entity');
+      camera.setAttribute('camera', '');
+      camera.setAttribute('look-controls', 'enabled: true');
+      camera.setAttribute('position', '0 1.6 0');
+      camera.setAttribute(
+        'gps-projected-camera',
+        `simulateLatitude: ${this.userLocation.latitude}; ` +
+          `simulateLongitude: ${this.userLocation.longitude}; ` +
+          'positionMinAccuracy: 100;'
+      );
+
+      aframeScene.appendChild(camera);
+
+      // Add the scene to container
+      this.container.appendChild(aframeScene);
+
+      // Set up renderer
+      this.renderer.setPixelRatio(1);
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
 
       // Handle window resize
       window.addEventListener('resize', this.onWindowResize.bind(this));
+
+      // Wait for scene to load
+      await new Promise<void>(resolve => {
+        aframeScene.addEventListener('loaded', () => {
+          console.log('A-Frame scene loaded');
+          resolve();
+        });
+      });
+
+      // Start AR experience
+      options.onStart?.();
     } catch (error) {
       console.error('Failed to initialize AR:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to initialize AR';
-      options.onError?.(new Error(`AR initialization failed: ${errorMessage}`));
+      options.onError?.(
+        new Error(
+          `AR initialization failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        )
+      );
       throw error;
     }
   }
 
-  private async initializeARjs(options: ARSceneOptions): Promise<void> {
-    this.isUsingARjs = true;
+  private async initializeLocationTracking(): Promise<void> {
+    try {
+      // Request permissions first
+      const locationService = LocationService.getInstance();
+      const permissionsGranted = await locationService.requestPermissions();
 
-    // Get initial location
-    const initialLocation = await this.locationService.getCurrentLocation();
-    if (initialLocation) {
-      this.initialLatitude = initialLocation.latitude;
-      this.initialLongitude = initialLocation.longitude;
-    }
+      if (!permissionsGranted) {
+        throw new Error('Location permissions not granted');
+      }
 
-    // Initialize AR.js source (camera stream)
-    this.arToolkitSource = new THREEx.ArToolkitSource({
-      sourceType: 'webcam',
-      sourceWidth: window.innerWidth,
-      sourceHeight: window.innerHeight,
-      displayWidth: window.innerWidth,
-      displayHeight: window.innerHeight,
-    });
+      // Start location tracking
+      locationService.startTracking();
 
-    // Initialize AR.js context for location-based AR
-    this.arToolkitContext = new THREEx.ArToolkitContext({
-      debug: false,
-      detectionMode: 'color_and_matrix',
-      matrixCodeType: '3x3',
-      cameraParametersUrl: undefined,
-      maxDetectionRate: 60,
-      canvasWidth: window.innerWidth,
-      canvasHeight: window.innerHeight,
-      imageSmoothingEnabled: true,
-    });
+      // Wait for first location update
+      const location = await new Promise<Location>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error('Location timeout after 10 seconds'));
+        }, 10000);
 
-    // Handle AR.js initialization
-    await new Promise<void>(resolve => {
-      this.arToolkitSource.init(() => {
-        this.arToolkitSource.onResize();
-        this.arToolkitSource.copySizeTo(this.renderer.domElement);
-
-        this.arToolkitContext.init(() => {
-          // Update camera projection matrix
-          this.camera.projectionMatrix.copy(
-            this.arToolkitContext.getProjectionMatrix()
-          );
-
-          // Set up location-based scene
-          this.setupLocationBasedScene();
-          resolve();
+        const cleanup = locationService.onLocationUpdate((loc: Location) => {
+          clearTimeout(timeout);
+          cleanup();
+          resolve(loc);
         });
       });
-    });
 
-    // Start animation loop
-    const animate = () => {
-      requestAnimationFrame(animate);
-
-      if (this.arToolkitSource.ready) {
-        this.arToolkitContext.update(this.arToolkitSource.domElement);
-        this.scene.visible = true;
-
-        // Update camera position based on device orientation
-        const location = this.locationService.getCurrentLocation();
-        if (location) {
-          this.updateCameraFromDeviceOrientation(location);
-        }
-      }
-
-      this.renderer.render(this.scene, this.camera);
-    };
-    animate();
-
-    options.onStart?.();
-  }
-
-  private setupLocationBasedScene(): void {
-    // Set up scene for location-based AR
-    this.scene.visible = false;
-
-    // Add a ground plane for reference
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
-    const groundMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.0, // invisible but used for raycasting
-      side: THREE.DoubleSide,
-    });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotateX(-Math.PI / 2);
-    ground.position.y = -2;
-    this.scene.add(ground);
-
-    // Position camera
-    this.camera.position.set(0, 2, 0); // 2 meters above ground
-    this.camera.lookAt(new THREE.Vector3(0, 2, -1));
-  }
-
-  private updateCameraFromDeviceOrientation(location: {
-    latitude: number;
-    longitude: number;
-  }): void {
-    if (!this.camera) return;
-
-    // Get device orientation if available
-    if (typeof DeviceOrientationEvent !== 'undefined') {
-      window.addEventListener(
-        'deviceorientation',
-        event => {
-          if (!event.alpha || !event.beta || !event.gamma) return;
-
-          // Convert degrees to radians
-          const alpha = event.alpha * (Math.PI / 180);
-          const beta = event.beta * (Math.PI / 180);
-          const gamma = event.gamma * (Math.PI / 180);
-
-          // Update camera rotation
-          this.camera.rotation.set(
-            beta, // X-axis rotation (looking up/down)
-            alpha, // Y-axis rotation (looking left/right)
-            -gamma // Z-axis rotation (tilting left/right)
-          );
-        },
-        true
-      );
+      this.userLocation = location;
+      console.log('Location initialized:', location);
+    } catch (error) {
+      console.error('Failed to get user location:', error);
+      throw error;
     }
-
-    // Update camera position based on GPS
-    // Convert GPS coordinates to scene coordinates (simplified)
-    const sceneX = (location.longitude - this.initialLongitude) * 111000; // rough meters per degree
-    const sceneZ = (location.latitude - this.initialLatitude) * 111000;
-    this.camera.position.set(sceneX, 2, sceneZ);
-  }
-
-  private async initializeWebXR(options: ARSceneOptions): Promise<void> {
-    // Existing WebXR initialization code...
-  }
-
-  private render(_timestamp: number, frame: XRFrame | null): void {
-    if (frame) {
-      const referenceSpace = this.renderer.xr.getReferenceSpace();
-      const session = this.renderer.xr.getSession();
-
-      if (referenceSpace && session) {
-        // Handle hit testing
-        if (!this.hitTestSourceRequested) {
-          void (async () => {
-            try {
-              if (
-                !session?.requestReferenceSpace ||
-                !session?.requestHitTestSource
-              ) {
-                throw new Error(
-                  'Session does not support required AR features'
-                );
-              }
-
-              const viewerSpace = await session.requestReferenceSpace('viewer');
-              if (!viewerSpace) {
-                throw new Error('Failed to get viewer space');
-              }
-
-              const hitTestSource = await session.requestHitTestSource({
-                space: viewerSpace,
-              });
-
-              if (!hitTestSource) {
-                throw new Error('Failed to create hit test source');
-              }
-
-              this.hitTestSource = hitTestSource;
-            } catch (error) {
-              console.error('Error requesting hit test source:', error);
-            }
-            this.hitTestSourceRequested = true;
-          })();
-        }
-
-        if (this.hitTestSource) {
-          const hitTestResults = frame.getHitTestResults(this.hitTestSource);
-          if (hitTestResults.length) {
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(referenceSpace);
-            if (pose) {
-              this.reticle.visible = true;
-              this.reticle.matrix.fromArray(pose.transform.matrix);
-            }
-          }
-        }
-
-        // Update XR light if available
-        if (this.xrLight) {
-          // Cast to any since the type definitions are incomplete
-          (this.xrLight as any).update(frame);
-        }
-      }
-    }
-
-    this.renderer.render(this.scene, this.camera);
   }
 
   async placeModel(
     model: ProcessedModel,
     options: PlacementOptions = {}
   ): Promise<void> {
+    if (!this.userLocation) {
+      throw new Error('User location not available');
+    }
+
+    const modelEntity = document.createElement('a-entity');
+
+    // If coordinates are provided, use them for location-based placement
+    if (options.coordinates) {
+      modelEntity.setAttribute(
+        'gps-projected-entity-place',
+        `latitude: ${options.coordinates.latitude}; ` +
+          `longitude: ${options.coordinates.longitude};`
+      );
+    } else {
+      // Default to current user location if no coordinates provided
+      modelEntity.setAttribute(
+        'gps-projected-entity-place',
+        `latitude: ${this.userLocation.latitude}; ` +
+          `longitude: ${this.userLocation.longitude};`
+      );
+    }
+
+    // Set initial scale and position
+    modelEntity.setAttribute('scale', '1 1 1');
+    modelEntity.setAttribute('position', '0 0 0');
+    modelEntity.setAttribute('look-at', '[gps-projected-camera]');
+
+    // Convert Three.js model to A-Frame entity
     const modelScene = model.scene.clone();
+    if (options.position) modelScene.position.copy(options.position);
+    if (options.rotation) modelScene.rotation.copy(options.rotation);
+    if (options.scale) modelScene.scale.copy(options.scale);
 
-    if (options.position) {
-      modelScene.position.copy(options.position);
-    } else if (this.reticle.visible) {
-      modelScene.matrix.copy(this.reticle.matrix);
-    }
+    // Add model to A-Frame entity
+    const modelWrapper = document.createElement('a-entity');
+    modelWrapper.object3D = modelScene;
+    modelEntity.appendChild(modelWrapper);
 
-    if (options.rotation) {
-      modelScene.rotation.copy(options.rotation);
-    }
-
-    if (options.scale) {
-      modelScene.scale.copy(options.scale);
-    }
-
-    this.scene.add(modelScene);
+    // Track model for management
     this.models.set(model.metadata.id, modelScene);
+
+    // Add to A-Frame scene
+    const aframeScene = this.container?.querySelector('a-scene');
+    if (aframeScene) {
+      aframeScene.appendChild(modelEntity);
+    }
   }
 
   removeModel(modelId: string): void {
     const model = this.models.get(modelId);
     if (model) {
-      this.scene.remove(model);
+      // Find the parent A-Frame entity by traversing up from the model
+      let currentElement = model.parent;
+      while (currentElement && !(currentElement instanceof HTMLElement)) {
+        currentElement = currentElement.parent;
+      }
+
+      // Remove from DOM if we found the A-Frame entity
+      if (
+        currentElement instanceof HTMLElement &&
+        currentElement.parentElement
+      ) {
+        currentElement.parentElement.removeChild(currentElement);
+      }
+
       this.models.delete(modelId);
     }
   }
@@ -361,51 +274,42 @@ export class AREngine {
   }
 
   private onWindowResize(): void {
-    if (this.isUsingARjs) {
-      if (this.arToolkitSource) {
-        this.arToolkitSource.onResizeElement();
-        this.arToolkitSource.copyElementSizeTo(this.renderer.domElement);
-        if (this.arToolkitContext.arController !== null) {
-          this.arToolkitSource.copyElementSizeTo(
-            this.arToolkitContext.arController.canvas
-          );
-        }
-      }
-    } else {
+    if (this.container) {
+      // Update camera
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
-    }
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-  }
 
-  private cleanup(): void {
-    if (this.hitTestSource) {
-      this.hitTestSource.cancel();
-      this.hitTestSource = null;
-    }
-    this.hitTestSourceRequested = false;
-    this.reticle.visible = false;
+      // Update renderer
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Clear all models
-    this.models.forEach(model => {
-      this.scene.remove(model);
-    });
-    this.models.clear();
-
-    if (this.xrLight) {
-      this.scene.remove(this.xrLight);
-      this.xrLight = null;
+      // Update A-Frame scene size
+      const aframeScene = this.container.querySelector('a-scene');
+      if (aframeScene) {
+        aframeScene.setAttribute(
+          'arjs',
+          'sourceType: webcam; ' +
+            'debugUIEnabled: false; ' +
+            'trackingMethod: best; ' +
+            'detectionMode: mono; ' +
+            'maxDetectionRate: 30;'
+        );
+      }
     }
   }
 
-  dispose(): void {
-    this.cleanup();
+  public dispose(): void {
+    // Clean up resources
+    this.renderer.dispose();
     window.removeEventListener('resize', this.onWindowResize.bind(this));
 
-    if (this.container && this.renderer.domElement) {
-      this.container.removeChild(this.renderer.domElement);
+    // Remove A-Frame scene
+    if (this.container) {
+      const aframeScene = this.container.querySelector('a-scene');
+      if (aframeScene) {
+        this.container.removeChild(aframeScene);
+      }
     }
-
-    this.renderer.dispose();
   }
 }
+
+export default AREngine;

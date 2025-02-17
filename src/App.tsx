@@ -6,7 +6,6 @@ import {
   Navigate,
 } from 'react-router-dom';
 import { ARViewer } from './components/ar/ARViewer';
-import { DoodleCanvas } from './components/ar/DoodleCanvas';
 import { MapInterface } from './components/map/MapInterface';
 import { Camera } from 'three';
 import './App.css';
@@ -31,13 +30,11 @@ const App: React.FC = () => {
             path="/ar"
             element={
               <ARViewer
+                onStart={() => console.log('AR Started')}
+                onEnd={() => console.log('AR Ended')}
+                onError={error => console.error('AR Error:', error)}
                 onBack={() => (window.location.href = '/')}
-                onError={error => {
-                  console.error('AR Error:', error);
-                }}
-              >
-                {(camera: Camera) => <DoodleCanvas camera={camera} />}
-              </ARViewer>
+              />
             }
           />
 

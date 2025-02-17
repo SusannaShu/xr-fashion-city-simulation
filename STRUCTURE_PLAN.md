@@ -1,285 +1,250 @@
-# Virtual Space Project Structure
+# Virtual Space Project Structure - MVP
 
-## 🏗️ Project Architecture
+## 🎯 MVP Focus
 
-### Frontend Structure
+Simplified location-based AR experience using A-Frame, supporting both drawing and 3D models
+
+### Current Codebase Structure
 
 ```typescript
 virtual_space/
-├── src/
+├── src/                            # Source code
 │   ├── components/
 │   │   ├── ar/
-│   │   │   ├── ARViewer.tsx           # AR scene container & multi-browser AR management
-│   │   │   │   ├── WebXR integration  # Native AR for Safari
-│   │   │   │   ├── AR.js integration  # Location-based AR for other browsers
-│   │   │   │   ├── WebRTC fallback    # Basic camera-based AR
-│   │   │   │   └── Permission handling # Camera and motion sensor permissions
+│   │   │   ├── ARViewer.tsx           # Main AR component
 │   │   │   ├── ARViewer.module.css    # AR viewer styles
-│   │   │   ├── ARControls.tsx         # AR interaction controls
-│   │   │   ├── ARControls.module.css  # Controls styles
 │   │   │   ├── DrawingCanvas.tsx      # Drawing functionality
-│   │   │   └── DrawingCanvas.module.css # Drawing styles
+│   │   │   ├── DrawingCanvas.module.css # Drawing styles
+│   │   │   ├── ARControls.tsx         # AR interaction controls
+│   │   │   └── ARControls.module.css  # Controls styles
 │   │   ├── map/
-│   │   │   ├── MapInterface.tsx       # Mapbox integration
+│   │   │   ├── MapInterface.tsx       # Main map component
 │   │   │   ├── MapInterface.module.css # Map styles
 │   │   │   ├── LocationPicker.tsx     # Location selection
 │   │   │   └── LocationPicker.module.css # Picker styles
 │   │   ├── model/
-│   │   │   ├── ModelUploader.tsx      # Model upload interface
-│   │   │   ├── ModelUploader.module.css # Uploader styles
-│   │   │   ├── ModelViewer.tsx        # 3D model display
+│   │   │   ├── ModelViewer.tsx        # 3D model viewer
 │   │   │   ├── ModelViewer.module.css # Viewer styles
-│   │   │   ├── ModelControls.tsx      # Model manipulation
-│   │   │   └── ModelControls.module.css # Controls styles
+│   │   │   ├── ModelUploader.tsx      # Model upload handling
+│   │   │   ├── ModelUploader.module.css # Uploader styles
+│   │   │   ├── ModelList.tsx          # Model list/gallery
+│   │   │   └── ModelInteraction.tsx   # Model interactions
 │   │   └── shared/
-│   │       ├── LoadingSpinner.tsx     # Loading states
-│   │       ├── LoadingSpinner.module.css # Spinner styles
 │   │       ├── ErrorBoundary.tsx      # Error handling
-│   │       ├── Toast.tsx              # Notifications
-│   │       └── Toast.module.css       # Toast styles
+│   │       ├── ErrorBoundary.module.css # Error styles
+│   │       ├── LoadingSpinner.tsx     # Loading indicator
+│   │       ├── LoadingSpinner.module.css # Spinner styles
+│   │       ├── Toast.tsx              # Toast notifications
+│   │       ├── Toast.module.css       # Toast styles
+│   │       ├── ToastContainer.tsx     # Toast manager
+│   │       └── ToastContainer.module.css # Container styles
 │   ├── services/
+│   │   ├── ar/
+│   │   │   ├── arEngine.ts           # AR core functionality
+│   │   │   ├── arjsSetup.ts          # AR.js initialization
+│   │   │   ├── aframe-init.ts        # A-Frame setup
+│   │   │   ├── drawingService.ts     # Drawing functionality
+│   │   │   └── locationService.ts    # Location handling
 │   │   ├── firebase/
-│   │   │   ├── config.ts             # Firebase setup
-│   │   │   ├── storage.ts            # Model storage
-│   │   │   ├── metadata.ts           # Model metadata
-│   │   │   └── sync.ts               # Real-time sync
-│   │   ├── strapi/
-│   │   │   ├── auth.ts               # Authentication
-│   │   │   ├── user.ts               # User management
-│   │   │   └── api.ts                # API client
-│   │   ├── ar/
-│   │   │   ├── arEngine.ts           # WebXR & scene management
-│   │   │   ├── locationService.ts    # Geolocation & anchors
-│   │   │   └── drawingService.ts     # 3D drawing management
+│   │   │   ├── config.ts             # Firebase configuration
+│   │   │   ├── storage.ts            # File storage handling
+│   │   │   ├── sync.ts              # Real-time synchronization
+│   │   │   ├── metadata.ts          # Content metadata handling
+│   │   │   └── database.ts          # Database operations
 │   │   └── model/
-│   │       ├── ModelLoader.ts        # Model loading & processing
 │   │       ├── ModelTransformer.ts   # Model transformations
-│   │       └── MaterialManager.ts    # Material handling
-│   ├── store/
-│   │   ├── index.ts                  # Store configuration
-│   │   ├── models/
-│   │   │   ├── modelSlice.ts         # Model state
-│   │   │   └── transformSlice.ts     # Transform state
-│   │   ├── ar/
-│   │   │   └── drawingSlice.ts       # Drawing state
-│   │   └── map/
-│   │       └── locationSlice.ts      # Location state
-│   ├── types/
-│   │   ├── env.d.ts                  # Environment types
-│   │   ├── firebase.d.ts             # Firebase types
-│   │   ├── model.d.ts                # Model types
-│   │   └── ar.d.ts                   # AR/WebXR types
-│   ├── utils/
-│   │   ├── three/                    # Three.js utilities
-│   │   ├── geo/                      # Geolocation utilities
-│   │   └── model/                    # Model processing
+│   │       └── ModelLoader.ts        # Model loading & processing
+│   ├── store/                        # State management
+│   │   ├── index.ts                 # Store configuration
+│   │   └── models/                  # Model-related state
+│   │       └── modelSlice.ts        # Model state management
 │   ├── hooks/                        # Custom React hooks
-│   │   ├── useAR.ts                  # AR functionality
-│   │   ├── useModel.ts               # Model management
-│   │   └── useLocation.ts            # Location tracking
-│   ├── assets/                       # Static assets
-│   └── styles/                       # Global styles
+│   │   └── useModel.ts             # Model management hook
+│   ├── utils/                        # Utility functions
+│   │   └── classNames.ts           # CSS class utilities
+│   ├── types/                        # TypeScript definitions
+│   │   ├── ar.d.ts                 # AR type definitions
+│   │   ├── models.ts               # Model type definitions
+│   │   ├── global.d.ts             # Global type declarations
+│   │   ├── env.d.ts                # Environment variables types
+│   │   └── aframe.d.ts             # A-Frame type definitions
+│   ├── config/                       # Configuration files
+│   │   └── firebase-config.d.ts    # Firebase config types
+│   ├── _reference_js/               # Reference implementations
+│   │   ├── app.js                  # Original app implementation
+│   │   ├── modelList.js            # Model list reference
+│   │   ├── modelInteraction.js     # Model interaction reference
+│   │   └── firebase-config.js      # Firebase config reference
+│   ├── App.tsx                      # Main application component
+│   ├── App.css                      # App-specific styles
+│   ├── main.tsx                     # Application entry point
+│   ├── config.ts                    # Global configuration
+│   └── styles.css                   # Global styles
+├── .github/workflows/              # GitHub Actions
+│   ├── firebase-hosting-merge.yml        # Production deployment
+│   └── firebase-hosting-pull-request.yml # PR previews
+├── models/                         # 3D model assets
+├── docs/                          # Documentation
+│   ├── STRUCTURE_PLAN.md          # Project structure
+│   ├── TODO.md                    # Development tasks
+│   ├── README.md                  # Project overview
+│   └── CONTRIBUTING.md            # Contribution guide
+├── Development Config
+│   ├── .vscode/                   # VS Code settings
+│   ├── .husky/                    # Git hooks
+│   ├── .eslintrc.json            # ESLint configuration
+│   ├── .prettierrc               # Prettier configuration
+│   ├── .lintstagedrc             # Lint-staged config
+│   └── .gitignore                # Git ignore rules
+├── Build Config
+│   ├── package.json              # NPM configuration
+│   ├── package-lock.json         # Dependency lock
+│   ├── tsconfig.json            # TypeScript config
+│   ├── tsconfig.node.json       # Node TypeScript config
+│   └── vite.config.ts           # Vite configuration
+├── Firebase Config
+│   ├── .firebase/               # Firebase cache
+│   ├── firebase.json            # Firebase configuration
+│   ├── firestore.rules          # Firestore security rules
+│   ├── firestore.indexes.json   # Firestore indexes
+│   └── .firebaserc             # Firebase project config
+├── Environment
+│   ├── .env                     # Default environment
+│   ├── .env.local              # Local overrides
+│   └── .env.example            # Environment template
+├── Build Output
+│   ├── dist/                   # Production build
+│   └── node_modules/           # Dependencies
+├── Web Entry
+│   ├── index.html             # Main entry point
+│   ├── 404.html              # Error page
+│   └── susu_doodle_logo.png  # Logo asset
+└── config.js                  # Legacy configuration
 ```
 
 ### Component Features
 
-#### AR Components
+#### AR Components (Using A-Frame)
 
 - **ARViewer**
 
-  - WebXR session management
-  - Scene initialization
-  - Camera calibration
-  - Model placement
-  - Lighting setup
-
-- **ARControls**
-
-  - Mode switching (view/draw/place)
-  - Drawing controls
-  - Model placement controls
-  - Camera controls
-  - Action buttons
+  - Camera permission handling
+  - A-Frame scene setup
+  - Drawing & model interaction
+  - Location tracking
+  - Basic UI controls
 
 - **DrawingCanvas**
-  - 3D drawing interface
-  - Color picker
-  - Stroke width control
-  - Drawing preview
-  - Pressure sensitivity
+  - Drawing functionality
+  - Touch interaction
+  - Point-based drawing
+  - Hot pink color (#FF69B4)
 
 #### Map Components
 
 - **MapInterface**
-
   - Mapbox integration
-  - Model location visualization
-  - Interaction handling
-  - Custom markers
-  - Selective colorization system
-    - Grayscale base map
-    - Color highlights for active areas
-    - Dynamic color transitions
-    - Area-based color activation
-  - Offline support
-  - 3D terrain visualization
+  - Content location visualization
+  - Area-based navigation
+  - Simple grayscale with color highlights
 
-- **LocationPicker**
-  - Location search
-  - Coordinate selection
-  - Geofencing interface
-  - Distance calculation
-  - Area selection
+### Core Features
 
-#### Model Components
+#### AR Experience
 
-- **ModelUploader**
+- Basic 3D drawing in AR space
+- Simple model placement
+- Camera view with AR overlay
+- Touch interaction
+- Location awareness
 
-  - Drag and drop interface
-  - File validation
-  - Upload progress
-  - Format conversion
-  - Preview generation
+#### Drawing Features
 
-- **ModelViewer**
+- Single color (Hot Pink #FF69B4)
+- Point-based drawing
+- Basic persistence
+- Location anchoring
 
-  - 3D model rendering
-  - Camera controls
-  - Lighting setup
-  - Material preview
-  - Animation playback
+#### Model Features
 
-- **ModelControls**
-  - Transform controls
-  - Material controls
-  - Animation controls
-  - Save/reset functionality
-  - History management
+- GLTF/GLB support
+- Basic transformations
+- Location anchoring
+- Simple interactions
 
-#### Shared Components
+#### Map Experience
 
-- **LoadingSpinner**
+- Content location markers
+- Simple navigation
+- Area activation
+- Basic visual feedback
 
-  - Configurable loading states with progress
-  - Accessible and responsive design
-
-- **ErrorBoundary**
-
-  - Error catching and recovery
-  - Fallback UI with debug info
-  - Error reporting integration
-
-- **Toast**
-  - Multiple notification types
-  - Auto-dismiss and action support
-  - Queue management
-
-### Service Layer
+### Services
 
 #### Firebase Services
 
-- Model storage and retrieval
-- Real-time synchronization
+- Content storage
 - Metadata management
-- Version control
-- Asset optimization
+- Location data
+- Basic persistence
 
 #### AR Services
 
-- WebXR integration
-- Geolocation tracking
-- Spatial anchoring
+- Location tracking
 - Drawing management
-- Scene optimization
+- Model handling
+- Scene management
 
 #### Model Services
 
-- Model loading and processing
-- Transformation handling
-- Material management
-- Animation control
-- Optimization pipeline
+- Model loading
+- Basic transformations
+- Preview generation
+- Format handling
 
-#### Strapi Services
+### Technical Stack
 
-- Authentication
-- User management
-- Content management
-- API integration
-- Data validation
+- A-Frame for AR & 3D
+- React for UI
+- Firebase for storage
+- Mapbox for mapping
 
-### State Management
+### Development Priority
 
-#### Model State
+1. Set up basic A-Frame AR scene
+2. Implement location tracking
+3. Add drawing capabilities
+4. Enable model loading
+5. Integrate with map
+6. Add content persistence
 
-- Model metadata
-- Transform state
-- Material state
-- Animation state
-- History management
+### Future Enhancements
 
-#### AR State
+(Post-MVP)
 
-- Drawing state
-- Camera state
-- Scene state
-- Interaction state
-- Performance metrics
+1. Content Tools
 
-#### Map State
+   - Multiple colors
+   - Line styles
+   - Advanced model controls
+   - Animation support
 
-- Location state
-- Area activation state
-  - Active zones tracking
-  - Color transition management
-  - Model presence indicators
-  - Drawing area highlights
-- View state
-- Search history
+2. Social Features
 
-### Testing Strategy
+   - User accounts
+   - Content sharing
+   - Likes/comments
 
-#### Unit Tests
+3. Advanced AR
 
-- Component testing
-- Service testing
-- State management
-- Utility functions
-- Type checking
+   - Surface detection
+   - Object occlusion
+   - Advanced anchoring
 
-#### Integration Tests
-
-- Component interaction
-- Service integration
-- State flow
-- API integration
-- Error handling
-
-#### Performance Tests
-
-- Load testing
-- Memory management
-- Network optimization
-- Asset loading
-- WebXR performance
-
-### Documentation
-
-#### Technical Docs
-
-- API documentation
-- Component documentation
-- Service documentation
-- State management
-- Testing guide
-
-#### User Docs
-
-- User guide
-- Designer guide
-- Best practices
-- Troubleshooting
-- FAQ
+4. Enhanced Map
+   - Custom styling
+   - Advanced navigation
+   - Content filtering
 
 ## 🔄 Core Features
 
