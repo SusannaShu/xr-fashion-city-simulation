@@ -36,9 +36,14 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const [arMode, setARMode] = useState<ARMode>(null);
   const [showMotionPermissionButton, setShowMotionPermissionButton] =
     useState(false);
+  const [hasCamera, setHasCamera] = useState(false);
 
   const addStatusDetail = useCallback((detail: string) => {
     setDetailedStatus(prev => [...prev, detail]);
+  }, []);
+
+  const clearStatus = useCallback(() => {
+    setDetailedStatus([]);
   }, []);
 
   const cleanup = useCallback(() => {
@@ -49,6 +54,18 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     locationService.stopTracking();
     drawingService.dispose();
     arEngine.dispose();
+  }, []);
+
+  const checkCameraAccess = useCallback(async (): Promise<boolean> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch (e) {
+      return false;
+    }
   }, []);
 
   function requestMotionPermission(): Promise<boolean> {
@@ -90,8 +107,32 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       if (permission === 'granted') {
         setShowMotionPermissionButton(false);
         addStatusDetail('✓ Motion sensors granted');
-        // Re-run AR support check
-        void checkARSupport();
+        setIsARSupported(true);
+
+        // Determine AR mode
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          setARMode('arjs');
+          addStatusDetail('✓ Using AR.js for iOS');
+        } else if (navigator.xr) {
+          try {
+            const isImmersiveARSupported =
+              await navigator.xr.isSessionSupported('immersive-ar');
+            if (isImmersiveARSupported) {
+              setARMode('webxr');
+              addStatusDetail('✓ WebXR supported');
+            } else {
+              setARMode('arjs');
+              addStatusDetail('✓ Using AR.js fallback');
+            }
+          } catch {
+            setARMode('arjs');
+            addStatusDetail('✓ Using AR.js fallback');
+          }
+        } else {
+          setARMode('arjs');
+          addStatusDetail('✓ Using AR.js fallback');
+        }
       } else {
         addStatusDetail('❌ Motion sensor permission denied');
         setStatus('Motion Sensors Required');
@@ -100,10 +141,11 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       addStatusDetail('❌ Error requesting motion sensors');
       setStatus('Motion Sensors Required');
     }
-  }, [addStatusDetail, setStatus]);
+  }, [addStatusDetail]);
 
   const checkARSupport = useCallback(async () => {
     try {
+      clearStatus();
       addStatusDetail('Checking device compatibility...');
       const isMobile =
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -122,81 +164,53 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
       // Check camera access
       addStatusDetail('Requesting camera access...');
-      let hasCamera = false;
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
-        });
-        stream.getTracks().forEach(track => track.stop());
-        hasCamera = true;
-        addStatusDetail('✓ Camera access granted');
-      } catch (e) {
+      const hasCameraAccess = await checkCameraAccess();
+      if (!hasCameraAccess) {
         setIsARSupported(false);
         setStatus('Camera Access Required');
         addStatusDetail('❌ Camera access denied');
         return;
       }
+      setHasCamera(true);
+      addStatusDetail('✓ Camera access granted');
 
       // Check device orientation
-      if (hasCamera) {
-        addStatusDetail('Checking motion sensors...');
-        const hasMotionPermission = await requestMotionPermission();
-
-        if (!hasMotionPermission) {
-          setIsARSupported(false);
-          setStatus('Motion Sensors Required');
-          addStatusDetail('❌ Motion sensor access denied');
-          return;
-        }
-        addStatusDetail('✓ Motion sensors available');
-
-        // Check location services
-        addStatusDetail('Checking location services...');
-        try {
-          const locationService = LocationService.getInstance();
-          await locationService.requestPermissions();
-          addStatusDetail('✓ Location services ready');
-        } catch (e) {
-          addStatusDetail('⚠️ Location services not available');
-        }
-
-        // For iOS devices, use AR.js
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          setIsARSupported(true);
-          setARMode('arjs');
-          addStatusDetail('✓ Using AR.js for iOS');
-          return;
-        }
-
-        // For Android, try WebXR first
-        if (navigator.xr) {
-          try {
-            addStatusDetail('Checking WebXR support...');
-            const isImmersiveARSupported =
-              await navigator.xr.isSessionSupported('immersive-ar');
-            if (isImmersiveARSupported) {
-              setIsARSupported(true);
-              setARMode('webxr');
-              addStatusDetail('✓ WebXR supported');
-              return;
-            }
-            addStatusDetail('⚠️ WebXR not supported');
-          } catch (e) {
-            addStatusDetail('⚠️ WebXR check failed');
-          }
-        }
-
-        // Fallback to AR.js
-        setIsARSupported(true);
-        setARMode('arjs');
-        addStatusDetail('✓ Using AR.js fallback');
+      addStatusDetail('Checking motion sensors...');
+      const hasMotionPermission = await requestMotionPermission();
+      if (!hasMotionPermission) {
+        setIsARSupported(false);
+        setStatus('Motion Sensors Required');
+        addStatusDetail('❌ Motion sensor access denied');
         return;
       }
 
-      setIsARSupported(false);
-      setStatus('AR Not Available');
-      addStatusDetail('❌ Required features not available');
+      // If we get here with motion permission on iOS, we need to set up AR
+      if (hasMotionPermission) {
+        setIsARSupported(true);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          setARMode('arjs');
+          addStatusDetail('✓ Using AR.js for iOS');
+        } else if (navigator.xr) {
+          try {
+            const isImmersiveARSupported =
+              await navigator.xr.isSessionSupported('immersive-ar');
+            if (isImmersiveARSupported) {
+              setARMode('webxr');
+              addStatusDetail('✓ WebXR supported');
+            } else {
+              setARMode('arjs');
+              addStatusDetail('✓ Using AR.js fallback');
+            }
+          } catch {
+            setARMode('arjs');
+            addStatusDetail('✓ Using AR.js fallback');
+          }
+        } else {
+          setARMode('arjs');
+          addStatusDetail('✓ Using AR.js fallback');
+        }
+      }
     } catch (error) {
       setIsARSupported(false);
       setStatus('Initialization Failed');
@@ -204,7 +218,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
-  }, [requestMotionPermission, addStatusDetail, setStatus]);
+  }, [addStatusDetail, clearStatus, checkCameraAccess]);
 
   const initializeWebXR = useCallback(async () => {
     setStatus('Initializing WebXR AR...');
@@ -336,9 +350,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       }
     };
 
-    if (isARSupported && arMode) {
-      void initialize();
-    }
+    void initialize();
 
     return cleanup;
   }, [
@@ -379,27 +391,31 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
   return (
     <div ref={containerRef} className={styles.container}>
-      {!isARSupported && (
-        <div className={styles.statusOverlay}>
-          <h2>{status}</h2>
-          <div className={styles.statusDetails}>
-            {detailedStatus.map((detail, index) => (
-              <p key={index}>{detail}</p>
-            ))}
-          </div>
-          {showMotionPermissionButton && (
-            <button
-              className={styles.permissionButton}
-              onClick={handleMotionPermissionClick}
-            >
-              Allow Motion Sensors
-            </button>
-          )}
-          <button className={styles.backButton} onClick={onBack}>
-            Back to Map
-          </button>
+      <div
+        className={styles.statusOverlay}
+        style={{
+          display:
+            !isARSupported || showMotionPermissionButton ? 'flex' : 'none',
+        }}
+      >
+        <h2>{status}</h2>
+        <div className={styles.statusDetails}>
+          {detailedStatus.map((detail, index) => (
+            <p key={index}>{detail}</p>
+          ))}
         </div>
-      )}
+        {showMotionPermissionButton && (
+          <button
+            className={styles.permissionButton}
+            onClick={handleMotionPermissionClick}
+          >
+            Allow Motion Sensors
+          </button>
+        )}
+        <button className={styles.backButton} onClick={onBack}>
+          Back to Map
+        </button>
+      </div>
     </div>
   );
 };
