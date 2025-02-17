@@ -21,8 +21,6 @@
     "@reduxjs/toolkit": "^1.9.7",
     "@types/react-router-dom": "^5.3.3",
     "aframe": "^1.4.2",
-    "aframe-ar": "^0.2.1-a",
-    "ar.js": "^2.2.2",
     "firebase": "^9.23.0",
     "lodash": "^4.17.21",
     "mapbox-gl": "^2.15.0",

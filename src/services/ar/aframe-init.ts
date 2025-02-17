@@ -1,5 +1,12 @@
 let isInitialized = false;
 
+declare global {
+  interface Window {
+    AFRAME: any;
+    THREEx: any;
+  }
+}
+
 export const initializeAFrame = async (): Promise<void> => {
   if (isInitialized) {
     return;
@@ -41,9 +48,26 @@ export const initializeAFrame = async (): Promise<void> => {
     }
   });
 
-  // Dynamically import A-Frame and AR.js
-  await import('aframe');
-  await import('@ar-js-org/ar.js/aframe/build/aframe-ar');
+  // Wait for A-Frame and AR.js to be loaded from CDN
+  await new Promise<void>((resolve, reject) => {
+    const maxAttempts = 50;
+    let attempts = 0;
+
+    const checkInit = () => {
+      if (window.AFRAME && window.AFRAME.components) {
+        resolve();
+      } else if (attempts >= maxAttempts) {
+        reject(
+          new Error('Failed to initialize A-Frame: timeout after 5 seconds')
+        );
+      } else {
+        attempts++;
+        setTimeout(checkInit, 100);
+      }
+    };
+
+    checkInit();
+  });
 
   isInitialized = true;
 };
