@@ -73,12 +73,17 @@ export class AREngine {
     }
   }
 
-  public getScene(): THREE.Scene {
-    return this.scene;
-  }
-
   public getCamera(): THREE.PerspectiveCamera {
     return this.camera;
+  }
+
+  public static getCamera(): THREE.PerspectiveCamera {
+    const instance = AREngine.getInstance();
+    return instance.getCamera();
+  }
+
+  public getScene(): THREE.Scene {
+    return this.scene;
   }
 
   async initialize(options: ARSceneOptions): Promise<void> {
