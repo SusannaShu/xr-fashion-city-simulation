@@ -9,7 +9,11 @@ virtual_space/
 ├── src/
 │   ├── components/
 │   │   ├── ar/
-│   │   │   ├── ARViewer.tsx           # AR scene container & WebXR management
+│   │   │   ├── ARViewer.tsx           # AR scene container & multi-browser AR management
+│   │   │   │   ├── WebXR integration  # Native AR for Safari
+│   │   │   │   ├── AR.js integration  # Location-based AR for other browsers
+│   │   │   │   ├── WebRTC fallback    # Basic camera-based AR
+│   │   │   │   └── Permission handling # Camera and motion sensor permissions
 │   │   │   ├── ARViewer.module.css    # AR viewer styles
 │   │   │   ├── ARControls.tsx         # AR interaction controls
 │   │   │   ├── ARControls.module.css  # Controls styles
@@ -460,3 +464,69 @@ virtual_space/
 ├── src/
 │   └── config.ts              # Typed configuration
 ```
+
+### AR Services
+
+#### AREngine Service
+
+- WebXR session management
+- AR.js context handling
+- Scene management
+- Model placement
+- Camera calibration
+- Location-based positioning
+- Device orientation tracking
+- Permission state management
+  - Camera access handling
+  - Motion sensor access
+  - Permission persistence
+  - Error recovery
+
+#### LocationService
+
+- Geolocation tracking
+- Spatial anchoring
+- Location persistence
+- Proximity detection
+- Area activation
+- Location-based content loading
+
+#### DrawingService
+
+- 3D drawing capabilities
+- Stroke management
+- Real-time sync
+- Drawing persistence
+- Multi-browser compatibility
+- Canvas/WebGL rendering
+- Touch/motion input handling
+
+### Browser Support Strategy
+
+#### iOS Devices
+
+- Safari: WebXR (primary)
+- Chrome/Firefox: AR.js with location-based AR
+- Fallback: WebRTC camera feed with basic AR
+
+#### Android Devices
+
+- Chrome: WebXR (primary)
+- Firefox/Samsung: AR.js with location-based AR
+- Fallback: WebRTC camera feed with basic AR
+
+#### Permission Management
+
+- Camera access workflow
+  - Permission request
+  - State persistence
+  - Error handling
+  - Recovery options
+- Motion sensor access
+  - iOS-specific handling
+  - Permission request
+  - State management
+- Location services
+  - Permission request
+  - Accuracy levels
+  - State management

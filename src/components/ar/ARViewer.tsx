@@ -143,6 +143,71 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     };
   }, [onStart]);
 
+  const requestMotionPermission = useCallback(async (): Promise<boolean> => {
+    if (typeof DeviceOrientationEvent === 'undefined') {
+      return true; // Device doesn't require permission
+    }
+
+    const DeviceOrientationEventExt =
+      DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
+
+    // Check if we need to request permission (iOS 13+)
+    if (typeof DeviceOrientationEventExt.requestPermission === 'function') {
+      try {
+        // First try requesting permission
+        const permission = await DeviceOrientationEventExt.requestPermission();
+        return permission === 'granted';
+      } catch (e) {
+        // If request fails, try checking if we already have permission
+        return new Promise(resolve => {
+          // Set up a one-time device orientation event listener
+          const timeoutId = setTimeout(() => {
+            window.removeEventListener('deviceorientation', checkMotion);
+            resolve(false); // No motion events received within timeout
+          }, 1000);
+
+          const checkMotion = (event: DeviceOrientationEvent) => {
+            if (
+              event.alpha !== null ||
+              event.beta !== null ||
+              event.gamma !== null
+            ) {
+              window.removeEventListener('deviceorientation', checkMotion);
+              clearTimeout(timeoutId);
+              resolve(true); // We received motion data, so permission must be granted
+            }
+          };
+
+          window.addEventListener('deviceorientation', checkMotion, {
+            once: true,
+          });
+        });
+      }
+    }
+
+    // For non-iOS devices or older iOS versions, check if we can get motion data
+    return new Promise(resolve => {
+      const timeoutId = setTimeout(() => {
+        window.removeEventListener('deviceorientation', checkMotion);
+        resolve(false);
+      }, 1000);
+
+      const checkMotion = (event: DeviceOrientationEvent) => {
+        if (
+          event.alpha !== null ||
+          event.beta !== null ||
+          event.gamma !== null
+        ) {
+          window.removeEventListener('deviceorientation', checkMotion);
+          clearTimeout(timeoutId);
+          resolve(true);
+        }
+      };
+
+      window.addEventListener('deviceorientation', checkMotion, { once: true });
+    });
+  }, []);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -159,26 +224,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             'AR features are only available on mobile devices. Please access this feature from your phone or tablet.'
           );
           return;
-        }
-
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isSafari = /^((?!chrome|android).)*safari/i.test(
-          navigator.userAgent
-        );
-
-        // First check for WebXR support on Safari
-        if (isIOS && isSafari && navigator.xr) {
-          try {
-            const isImmersiveARSupported =
-              await navigator.xr.isSessionSupported('immersive-ar');
-            if (isImmersiveARSupported) {
-              setIsARSupported(true);
-              setARMode('webxr');
-              return;
-            }
-          } catch (e) {
-            // Continue to other methods if WebXR is not supported
-          }
         }
 
         // Check camera access first
@@ -214,44 +259,46 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
         // If we have camera access, check for device orientation
         if (hasCamera) {
-          if (typeof DeviceOrientationEvent !== 'undefined') {
-            const DeviceOrientationEventExt =
-              DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
-            if (
-              typeof DeviceOrientationEventExt.requestPermission === 'function'
-            ) {
-              try {
-                const permission =
-                  await DeviceOrientationEventExt.requestPermission();
-                if (permission === 'granted') {
-                  setIsARSupported(true);
-                  setARMode('arjs');
-                  return;
-                } else {
-                  setIsARSupported(false);
-                  setStatus(
-                    'Motion sensor access is required for AR features. Please grant motion sensor permissions and reload the page.'
-                  );
-                  return;
-                }
-              } catch (e) {
-                setIsARSupported(false);
-                setStatus(
-                  'Failed to get motion sensor permissions. Please ensure motion sensors are enabled and try again.'
-                );
+          const hasMotionPermission = await requestMotionPermission();
+
+          if (!hasMotionPermission) {
+            setIsARSupported(false);
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+              setStatus(
+                'Motion sensor access is required for AR. Please enable motion sensors: Settings > Safari > Motion & Orientation Access. Then reload the page.'
+              );
+            } else {
+              setStatus(
+                'Motion sensor access is required for AR. Please ensure motion sensors are enabled in your device settings and reload the page.'
+              );
+            }
+            return;
+          }
+
+          // Check for WebXR support on Safari
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const isSafari = /^((?!chrome|android).)*safari/i.test(
+            navigator.userAgent
+          );
+
+          if (isIOS && isSafari && navigator.xr) {
+            try {
+              const isImmersiveARSupported =
+                await navigator.xr.isSessionSupported('immersive-ar');
+              if (isImmersiveARSupported) {
+                setIsARSupported(true);
+                setARMode('webxr');
                 return;
               }
-            } else {
-              // Device orientation doesn't need permission on this device
-              setIsARSupported(true);
-              setARMode('arjs');
-              return;
+            } catch (e) {
+              // Continue to other methods if WebXR is not supported
             }
           }
 
-          // If device orientation is not available, fall back to basic WebRTC
+          // If WebXR is not supported, use AR.js
           setIsARSupported(true);
-          setARMode('webrtc');
+          setARMode('arjs');
           return;
         }
 
@@ -308,6 +355,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     initializeWebRTC,
     onError,
     cleanup,
+    requestMotionPermission,
   ]);
 
   const loadNearbyModels = async (models: ModelMetadata[]) => {

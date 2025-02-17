@@ -5,12 +5,12 @@
 ### Public Air Graffiti Implementation
 
 - [ ] Implement public 3D graffiti system
-  - [ ] Update AR interface for public access
+  - [x] Update AR interface for public access
   - [ ] Modify drawing persistence
   - [ ] Add social interaction features
   - [ ] Implement moderation system
 - [ ] Update UI elements
-  - [ ] Change "Draw Mode" to "Air Graffiti"
+  - [x] Change "Draw Mode" to "Air Graffiti"
   - [ ] Add public visibility indicators
   - [ ] Implement social sharing controls
 - [ ] Database structure updates
@@ -22,7 +22,7 @@
 ### AR Experience Enhancement
 
 - [ ] Optimize drawing experience
-  - [ ] Improve 3D stroke rendering
+  - [x] Improve 3D stroke rendering
   - [ ] Add stroke effects
   - [ ] Implement pressure sensitivity
   - [ ] Add color blending
@@ -31,6 +31,19 @@
   - [ ] Enable comments
   - [ ] Add artist attribution
   - [ ] Implement reporting system
+- [ ] AR Compatibility Improvements
+  - [x] Add AR.js support for non-Safari browsers
+  - [x] Implement WebRTC fallback for basic AR
+  - [x] Add device compatibility checks
+  - [ ] Improve permission handling
+    - [ ] Add permission persistence
+    - [ ] Implement better error recovery
+    - [ ] Add visual permission guides
+    - [ ] Handle permission edge cases
+  - [ ] Enhance browser support
+    - [x] Add iOS Chrome support
+    - [ ] Add Firefox support
+    - [ ] Add Samsung Internet support
 
 ### Map Integration
 
