@@ -51,6 +51,57 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     arEngine.dispose();
   }, []);
 
+  function requestMotionPermission(): Promise<boolean> {
+    if (typeof DeviceOrientationEvent === 'undefined') {
+      return Promise.resolve(true);
+    }
+
+    const DeviceOrientationEventExt =
+      DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
+
+    // For iOS devices
+    if (typeof DeviceOrientationEventExt.requestPermission === 'function') {
+      setShowMotionPermissionButton(true);
+      setStatus('Motion Sensors Required');
+      addStatusDetail('Tap "Allow Motion Sensors" to enable AR features');
+      return Promise.resolve(false);
+    }
+
+    // For non-iOS devices, check if motion data is available
+    return new Promise(resolve => {
+      const checkMotion = (event: DeviceOrientationEvent) => {
+        window.removeEventListener('deviceorientation', checkMotion);
+        resolve(
+          event.alpha !== null || event.beta !== null || event.gamma !== null
+        );
+      };
+      window.addEventListener('deviceorientation', checkMotion, { once: true });
+      // Timeout after 1 second if no motion event is received
+      setTimeout(() => resolve(false), 1000);
+    });
+  }
+
+  const handleMotionPermissionClick = useCallback(async () => {
+    const DeviceOrientationEventExt =
+      DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
+
+    try {
+      const permission = await DeviceOrientationEventExt.requestPermission?.();
+      if (permission === 'granted') {
+        setShowMotionPermissionButton(false);
+        addStatusDetail('✓ Motion sensors granted');
+        // Re-run AR support check
+        void checkARSupport();
+      } else {
+        addStatusDetail('❌ Motion sensor permission denied');
+        setStatus('Motion Sensors Required');
+      }
+    } catch (error) {
+      addStatusDetail('❌ Error requesting motion sensors');
+      setStatus('Motion Sensors Required');
+    }
+  }, [addStatusDetail, setStatus]);
+
   const checkARSupport = useCallback(async () => {
     try {
       addStatusDetail('Checking device compatibility...');
@@ -154,57 +205,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       );
     }
   }, [requestMotionPermission, addStatusDetail, setStatus]);
-
-  const requestMotionPermission = useCallback(async (): Promise<boolean> => {
-    if (typeof DeviceOrientationEvent === 'undefined') {
-      return true;
-    }
-
-    const DeviceOrientationEventExt =
-      DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
-
-    // For iOS devices
-    if (typeof DeviceOrientationEventExt.requestPermission === 'function') {
-      setShowMotionPermissionButton(true);
-      setStatus('Motion Sensors Required');
-      addStatusDetail('Tap "Allow Motion Sensors" to enable AR features');
-      return false;
-    }
-
-    // For non-iOS devices, check if motion data is available
-    return new Promise(resolve => {
-      const checkMotion = (event: DeviceOrientationEvent) => {
-        window.removeEventListener('deviceorientation', checkMotion);
-        resolve(
-          event.alpha !== null || event.beta !== null || event.gamma !== null
-        );
-      };
-      window.addEventListener('deviceorientation', checkMotion, { once: true });
-      // Timeout after 1 second if no motion event is received
-      setTimeout(() => resolve(false), 1000);
-    });
-  }, [addStatusDetail, setStatus]);
-
-  const handleMotionPermissionClick = useCallback(async () => {
-    const DeviceOrientationEventExt =
-      DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
-
-    try {
-      const permission = await DeviceOrientationEventExt.requestPermission?.();
-      if (permission === 'granted') {
-        setShowMotionPermissionButton(false);
-        addStatusDetail('✓ Motion sensors granted');
-        // Re-run AR support check
-        void checkARSupport();
-      } else {
-        addStatusDetail('❌ Motion sensor permission denied');
-        setStatus('Motion Sensors Required');
-      }
-    } catch (error) {
-      addStatusDetail('❌ Error requesting motion sensors');
-      setStatus('Motion Sensors Required');
-    }
-  }, [addStatusDetail, setStatus, checkARSupport]);
 
   const initializeWebXR = useCallback(async () => {
     setStatus('Initializing WebXR AR...');
