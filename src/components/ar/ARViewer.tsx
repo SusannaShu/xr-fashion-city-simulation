@@ -39,19 +39,30 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         // Load A-Frame first
         await new Promise<void>((resolve, reject) => {
           const aframeScript = document.createElement('script') as any;
-          aframeScript.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
+          // Using unpkg CDN which has better CORS support
+          aframeScript.src =
+            'https://unpkg.com/aframe@1.4.0/dist/aframe-master.min.js';
+          aframeScript.crossOrigin = 'anonymous';
           aframeScript.onload = () => resolve();
-          aframeScript.onerror = reject;
+          aframeScript.onerror = e => {
+            console.error('Failed to load A-Frame:', e);
+            reject(new Error('Failed to load A-Frame'));
+          };
           document.head.appendChild(aframeScript);
         });
 
         // Then load AR.js
         await new Promise<void>((resolve, reject) => {
           const arScript = document.createElement('script') as any;
+          // Using jsDelivr CDN which has better CORS support
           arScript.src =
-            'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js';
+            'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@master/aframe/build/aframe-ar.js';
+          arScript.crossOrigin = 'anonymous';
           arScript.onload = () => resolve();
-          arScript.onerror = reject;
+          arScript.onerror = e => {
+            console.error('Failed to load AR.js:', e);
+            reject(new Error('Failed to load AR.js'));
+          };
           document.head.appendChild(arScript);
         });
 
@@ -60,6 +71,8 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       } catch (error) {
         console.error('Failed to load AR scripts:', error);
         onError?.(error);
+        // Navigate back to map view on error
+        navigate('/');
       }
     };
 
@@ -67,11 +80,13 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
     return () => {
       // Cleanup scripts when component unmounts
-      const scripts = document.querySelectorAll('script[src*="aframe"]');
+      const scripts = document.querySelectorAll(
+        'script[src*="aframe"], script[src*="ar.js"]'
+      );
       scripts.forEach(script => script.remove());
       onEnd?.();
     };
-  }, [onStart, onEnd, onError]);
+  }, [onStart, onEnd, onError, navigate]);
 
   const handleBack = () => {
     if (onBack) {
@@ -88,6 +103,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         renderer="logarithmicDepthBuffer: true;"
         vr-mode-ui="enabled: false"
+        loading-screen="enabled: false"
       >
         {/* Camera */}
         <a-entity camera></a-entity>
