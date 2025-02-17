@@ -11,11 +11,11 @@ const firebaseConfig = {
   storageBucket: config.firebase.storageBucket,
   messagingSenderId: config.firebase.messagingSenderId,
   appId: config.firebase.appId,
-  measurementId: config.firebase.measurementId
+  measurementId: config.firebase.measurementId,
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
-export { app, analytics }; 
+export { app, analytics };

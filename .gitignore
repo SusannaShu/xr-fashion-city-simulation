@@ -1,4 +1,75 @@
-node_modules/
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Production
+build
+dist
+dist-ssr
+.firebase/
+
+# Environment Variables
+.env
+.env.local
+*.local
+
+# Debug Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+debug.log
+firebase-debug.log*
+firestore-debug.log
+ui-debug.log
+database-debug.log
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary files
 *.log
-.env 
+*.tmp
+.cache
+.temp
+
+# Cache
+.cache/
+.npm/
+.eslintcache
+.stylelintcache
+.prettiercache
+
+# Large files
+/models/
+*.glb
+*.gltf
+*.fbx
+*.obj
+*.mtl
+*.3ds
+*.blend
+*.max
+*.dae
+*.stl
+*.ply
+*.wrl
+*.3dm
+*.3mf
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+.directory 

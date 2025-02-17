@@ -1,0 +1,30 @@
+.errorContainer {
+  padding: 2rem;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  text-align: center;
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+.errorMessage {
+  margin: 1rem 0;
+  color: #ff6b6b;
+  font-size: 0.875rem;
+}
+
+.retryButton {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.retryButton:hover {
+  background-color: #357abd;
+} 

@@ -1,0 +1,55 @@
+.dropzone {
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropzone:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.active {
+  border-color: #4a90e2;
+  background-color: rgba(74, 144, 226, 0.1);
+}
+
+.uploading {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.mainText {
+  font-size: 1.25rem;
+  color: white;
+  margin: 0.5rem 0;
+}
+
+.subText {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.uploadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: white;
+}
+
+.defaultState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+} 

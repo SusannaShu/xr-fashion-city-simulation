@@ -1,0 +1,150 @@
+.container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 300px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  z-index: 1;
+}
+
+.searchBox {
+  position: relative;
+  margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  border-color: #4a90e2;
+}
+
+.searchingIndicator {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Style for the geolocation control container */
+.geolocateContainer {
+  display: flex;
+  align-items: center;
+}
+
+/* Override Mapbox geolocation control styles */
+:global(.mapboxgl-ctrl-geolocate) {
+  margin: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.searchResults {
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 12px;
+}
+
+.searchResult {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.searchResult:hover {
+  background-color: #f5f5f5;
+}
+
+.placeName {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.placeType {
+  font-size: 12px;
+  color: #666;
+  text-transform: capitalize;
+}
+
+.geofenceControls {
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+}
+
+.geofenceButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.geofenceButton:hover:not(:disabled) {
+  background-color: #357abd;
+}
+
+.geofenceButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.geofenceButton.active {
+  background-color: #e24a4a;
+}
+
+.geofenceButton.active:hover {
+  background-color: #bd3535;
+}
+
+.radiusControl {
+  margin-top: 12px;
+}
+
+.radiusControl label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.radiusControl input[type="range"] {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.radiusValue {
+  display: block;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+} 
