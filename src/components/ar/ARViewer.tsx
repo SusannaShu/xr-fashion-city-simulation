@@ -36,10 +36,14 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const [arMode, setARMode] = useState<ARMode>(null);
   const [showMotionPermissionButton, setShowMotionPermissionButton] =
     useState(false);
-  const [hasCamera, setHasCamera] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const addStatusDetail = useCallback((detail: string) => {
-    setDetailedStatus(prev => [...prev, detail]);
+    setDetailedStatus(prev => {
+      // Prevent duplicate messages
+      if (prev[prev.length - 1] === detail) return prev;
+      return [...prev, detail];
+    });
   }, []);
 
   const clearStatus = useCallback(() => {
@@ -98,7 +102,47 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     });
   }
 
+  const initializeAR = useCallback(async () => {
+    if (isInitializing) return;
+    setIsInitializing(true);
+
+    try {
+      const arEngine = AREngine.getInstance();
+      const drawingService = DrawingService.getInstance();
+      const locationService = LocationService.getInstance();
+
+      await arEngine.initialize({
+        container: containerRef.current ?? document.createElement('div'),
+        onStart: () => {
+          setStatus('AR session active - Move your phone to draw in space');
+          onStart?.();
+        },
+        onEnd: () => {
+          setStatus('AR session ended');
+          onEnd?.();
+        },
+        onError: error => {
+          setStatus(`Error: ${error.message}`);
+          onError?.(error);
+        },
+      });
+
+      drawingService.initialize(arEngine.getScene());
+      await locationService.startTracking();
+
+      setIsInitializing(false);
+    } catch (error) {
+      setIsInitializing(false);
+      const err =
+        error instanceof Error ? error : new Error('Unknown error occurred');
+      setStatus(`Error: ${err.message}`);
+      onError?.(err);
+    }
+  }, [onStart, onEnd, onError, isInitializing]);
+
   const handleMotionPermissionClick = useCallback(async () => {
+    if (isInitializing) return;
+
     const DeviceOrientationEventExt =
       DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
 
@@ -108,31 +152,8 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         setShowMotionPermissionButton(false);
         addStatusDetail('✓ Motion sensors granted');
         setIsARSupported(true);
-
-        // Determine AR mode
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          setARMode('arjs');
-          addStatusDetail('✓ Using AR.js for iOS');
-        } else if (navigator.xr) {
-          try {
-            const isImmersiveARSupported =
-              await navigator.xr.isSessionSupported('immersive-ar');
-            if (isImmersiveARSupported) {
-              setARMode('webxr');
-              addStatusDetail('✓ WebXR supported');
-            } else {
-              setARMode('arjs');
-              addStatusDetail('✓ Using AR.js fallback');
-            }
-          } catch {
-            setARMode('arjs');
-            addStatusDetail('✓ Using AR.js fallback');
-          }
-        } else {
-          setARMode('arjs');
-          addStatusDetail('✓ Using AR.js fallback');
-        }
+        setARMode('arjs');
+        addStatusDetail('✓ Using AR.js for iOS');
       } else {
         addStatusDetail('❌ Motion sensor permission denied');
         setStatus('Motion Sensors Required');
@@ -141,9 +162,12 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       addStatusDetail('❌ Error requesting motion sensors');
       setStatus('Motion Sensors Required');
     }
-  }, [addStatusDetail]);
+  }, [addStatusDetail, isInitializing]);
 
   const checkARSupport = useCallback(async () => {
+    if (isInitializing) return;
+    setIsInitializing(true);
+
     try {
       clearStatus();
       addStatusDetail('Checking device compatibility...');
@@ -158,6 +182,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         addStatusDetail(
           '❌ Device not supported: AR features are only available on mobile devices'
         );
+        setIsInitializing(false);
         return;
       }
       addStatusDetail('✓ Device supported');
@@ -169,9 +194,9 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         setIsARSupported(false);
         setStatus('Camera Access Required');
         addStatusDetail('❌ Camera access denied');
+        setIsInitializing(false);
         return;
       }
-      setHasCamera(true);
       addStatusDetail('✓ Camera access granted');
 
       // Check device orientation
@@ -181,187 +206,44 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         setIsARSupported(false);
         setStatus('Motion Sensors Required');
         addStatusDetail('❌ Motion sensor access denied');
+        setIsInitializing(false);
         return;
       }
 
-      // If we get here with motion permission on iOS, we need to set up AR
+      // If we get here with motion permission, we can start AR
       if (hasMotionPermission) {
         setIsARSupported(true);
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          setARMode('arjs');
-          addStatusDetail('✓ Using AR.js for iOS');
-        } else if (navigator.xr) {
-          try {
-            const isImmersiveARSupported =
-              await navigator.xr.isSessionSupported('immersive-ar');
-            if (isImmersiveARSupported) {
-              setARMode('webxr');
-              addStatusDetail('✓ WebXR supported');
-            } else {
-              setARMode('arjs');
-              addStatusDetail('✓ Using AR.js fallback');
-            }
-          } catch {
-            setARMode('arjs');
-            addStatusDetail('✓ Using AR.js fallback');
-          }
-        } else {
-          setARMode('arjs');
-          addStatusDetail('✓ Using AR.js fallback');
-        }
+        setARMode(isIOS ? 'arjs' : 'webxr');
+        addStatusDetail(`✓ Using ${isIOS ? 'AR.js for iOS' : 'WebXR'}`);
       }
+
+      setIsInitializing(false);
     } catch (error) {
       setIsARSupported(false);
       setStatus('Initialization Failed');
       addStatusDetail(
         `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
+      setIsInitializing(false);
     }
-  }, [addStatusDetail, clearStatus, checkCameraAccess]);
-
-  const initializeWebXR = useCallback(async () => {
-    setStatus('Initializing WebXR AR...');
-    const arEngine = AREngine.getInstance();
-    await arEngine.initialize({
-      container: containerRef.current ?? document.createElement('div'),
-      onStart: () => {
-        setStatus('AR session started');
-        onStart?.();
-      },
-      onEnd: () => {
-        setStatus('AR session ended');
-        onEnd?.();
-      },
-      onError: error => {
-        setStatus(`Error: ${error.message}`);
-        onError?.(error);
-      },
-    });
-
-    const drawingService = DrawingService.getInstance();
-    const locationService = LocationService.getInstance();
-
-    drawingService.initialize(arEngine.getScene());
-    locationService.startTracking();
-
-    setStatus('Loading nearby models...');
-    const nearbyModels = await locationService.getNearbyModels();
-    await loadNearbyModels(nearbyModels);
-  }, [onStart, onEnd, onError]);
-
-  const initializeARjs = useCallback(async () => {
-    setStatus('Initializing location-based AR...');
-    const arEngine = AREngine.getInstance();
-    await arEngine.initialize({
-      container: containerRef.current ?? document.createElement('div'),
-      onStart: () => {
-        setStatus('AR session active - Move your phone to draw in space');
-        onStart?.();
-      },
-      onEnd: () => {
-        setStatus('AR session ended');
-        onEnd?.();
-      },
-      onError: error => {
-        setStatus(`Error: ${error.message}`);
-        onError?.(error);
-      },
-    });
-
-    const drawingService = DrawingService.getInstance();
-    const locationService = LocationService.getInstance();
-
-    drawingService.initialize(arEngine.getScene());
-    await locationService.startTracking();
-  }, [onStart, onEnd, onError]);
-
-  const initializeWebRTC = useCallback(async () => {
-    setStatus('Initializing camera-based AR...');
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'environment',
-        width: { ideal: window.innerWidth },
-        height: { ideal: window.innerHeight },
-      },
-    });
-
-    const video = document.createElement('video');
-    const videoElement = video as unknown as HTMLVideoElement;
-    videoElement.srcObject = stream;
-    videoElement.className = styles.cameraFeed;
-    videoElement.playsInline = true;
-    videoElement.autoplay = true;
-    containerRef.current?.appendChild(videoElement);
-
-    const drawingService = DrawingService.getInstance();
-    const locationService = LocationService.getInstance();
-
-    await locationService.startTracking();
-
-    const canvas = document.createElement('canvas');
-    const canvasElement = canvas as unknown as HTMLCanvasElement;
-    canvasElement.className = styles.drawingOverlay;
-    canvasElement.width = window.innerWidth;
-    canvasElement.height = window.innerHeight;
-    containerRef.current?.appendChild(canvasElement);
-
-    drawingService.initialize(canvasElement, true);
-
-    setStatus('Ready - Tap to start drawing');
-    onStart?.();
-
-    return () => {
-      stream.getTracks().forEach(track => track.stop());
-      videoElement.remove();
-      canvasElement.remove();
-    };
-  }, [onStart]);
+  }, [addStatusDetail, clearStatus, checkCameraAccess, isInitializing]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isInitializing) return;
 
-    void checkARSupport();
-
-    if (!isARSupported || !arMode) return;
-
-    const initialize = async () => {
-      try {
-        switch (arMode) {
-          case 'webxr':
-            await initializeWebXR();
-            break;
-          case 'arjs':
-            await initializeARjs();
-            break;
-          case 'webrtc':
-            await initializeWebRTC();
-            break;
-          case 'quicklook':
-            // TODO: Implement iOS Quick Look
-            break;
-        }
-      } catch (error) {
-        const err =
-          error instanceof Error ? error : new Error('Unknown error occurred');
-        setStatus(`Error: ${err.message}`);
-        onError?.(err);
-      }
-    };
-
-    void initialize();
-
-    return cleanup;
+    if (!isARSupported && !showMotionPermissionButton) {
+      void checkARSupport();
+    } else if (isARSupported && arMode && !showMotionPermissionButton) {
+      void initializeAR();
+    }
   }, [
     isARSupported,
     arMode,
-    initializeWebXR,
-    initializeARjs,
-    initializeWebRTC,
-    onError,
-    cleanup,
+    showMotionPermissionButton,
     checkARSupport,
+    initializeAR,
+    isInitializing,
   ]);
 
   const loadNearbyModels = async (models: ModelMetadata[]) => {
@@ -408,6 +290,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           <button
             className={styles.permissionButton}
             onClick={handleMotionPermissionClick}
+            disabled={isInitializing}
           >
             Allow Motion Sensors
           </button>
