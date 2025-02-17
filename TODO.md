@@ -219,6 +219,7 @@
   - [x] Environment variables
   - [x] Build pipeline
   - [x] Development workflow
+  - [x] Initial production build
 
 ### Environment Configuration
 
