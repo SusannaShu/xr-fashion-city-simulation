@@ -30,18 +30,16 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   onBack,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const initializingRef = useRef(false);
-  const hasRunInitialCheckRef = useRef(false);
   const [status, setStatus] = useState<string>('Initializing...');
   const [detailedStatus, setDetailedStatus] = useState<string[]>([]);
   const [isARSupported, setIsARSupported] = useState<boolean | null>(null);
   const [arMode, setARMode] = useState<ARMode>(null);
   const [showMotionPermissionButton, setShowMotionPermissionButton] =
     useState(false);
+  const hasCheckedRef = useRef(false);
 
   const addStatusDetail = useCallback((detail: string) => {
     setDetailedStatus(prev => {
-      // Prevent duplicate messages
       if (prev[prev.length - 1] === detail) return prev;
       return [...prev, detail];
     });
@@ -61,52 +59,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     arEngine.dispose();
   }, []);
 
-  const checkCameraAccess = useCallback(async (): Promise<boolean> => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      });
-      stream.getTracks().forEach(track => track.stop());
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }, []);
-
-  function requestMotionPermission(): Promise<boolean> {
-    if (typeof DeviceOrientationEvent === 'undefined') {
-      return Promise.resolve(true);
-    }
-
-    const DeviceOrientationEventExt =
-      DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
-
-    // For iOS devices
-    if (typeof DeviceOrientationEventExt.requestPermission === 'function') {
-      setShowMotionPermissionButton(true);
-      setStatus('Motion Sensors Required');
-      addStatusDetail('Tap "Allow Motion Sensors" to enable AR features');
-      return Promise.resolve(false);
-    }
-
-    // For non-iOS devices, check if motion data is available
-    return new Promise(resolve => {
-      const checkMotion = (event: DeviceOrientationEvent) => {
-        window.removeEventListener('deviceorientation', checkMotion);
-        resolve(
-          event.alpha !== null || event.beta !== null || event.gamma !== null
-        );
-      };
-      window.addEventListener('deviceorientation', checkMotion, { once: true });
-      // Timeout after 1 second if no motion event is received
-      setTimeout(() => resolve(false), 1000);
-    });
-  }
-
   const initializeAR = useCallback(async () => {
-    if (initializingRef.current) return;
-    initializingRef.current = true;
-
     try {
       const arEngine = AREngine.getInstance();
       const drawingService = DrawingService.getInstance();
@@ -135,15 +88,10 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         error instanceof Error ? error : new Error('Unknown error occurred');
       setStatus(`Error: ${err.message}`);
       onError?.(err);
-    } finally {
-      initializingRef.current = false;
     }
   }, [onStart, onEnd, onError]);
 
   const handleMotionPermissionClick = useCallback(async () => {
-    if (initializingRef.current) return;
-    initializingRef.current = true;
-
     try {
       const DeviceOrientationEventExt =
         DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
@@ -154,7 +102,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         addStatusDetail('✓ Motion sensors granted');
         setIsARSupported(true);
         setARMode('arjs');
-        addStatusDetail('✓ Using AR.js for iOS');
+        void initializeAR();
       } else {
         addStatusDetail('❌ Motion sensor permission denied');
         setStatus('Motion Sensors Required');
@@ -162,23 +110,20 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     } catch (error) {
       addStatusDetail('❌ Error requesting motion sensors');
       setStatus('Motion Sensors Required');
-    } finally {
-      initializingRef.current = false;
     }
-  }, [addStatusDetail]);
+  }, [addStatusDetail, initializeAR]);
 
-  const checkARSupport = useCallback(async () => {
-    if (initializingRef.current) return;
-    initializingRef.current = true;
+  const checkDeviceSupport = useCallback(async () => {
+    if (hasCheckedRef.current) return;
+    hasCheckedRef.current = true;
 
     try {
       clearStatus();
-      addStatusDetail('Checking device compatibility...');
+      // Check if mobile device
       const isMobile =
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           navigator.userAgent
         );
-
       if (!isMobile) {
         setIsARSupported(false);
         setStatus('AR Not Supported');
@@ -190,61 +135,52 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       addStatusDetail('✓ Device supported');
 
       // Check camera access
-      addStatusDetail('Requesting camera access...');
-      const hasCameraAccess = await checkCameraAccess();
-      if (!hasCameraAccess) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+        });
+        stream.getTracks().forEach(track => track.stop());
+        addStatusDetail('✓ Camera access granted');
+      } catch {
         setIsARSupported(false);
         setStatus('Camera Access Required');
         addStatusDetail('❌ Camera access denied');
         return;
       }
-      addStatusDetail('✓ Camera access granted');
 
-      // Check device orientation
-      addStatusDetail('Checking motion sensors...');
-      const hasMotionPermission = await requestMotionPermission();
-      if (!hasMotionPermission) {
-        setIsARSupported(false);
-        setStatus('Motion Sensors Required');
-        addStatusDetail('❌ Motion sensor access denied');
-        return;
+      // Check if iOS device
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        const DeviceOrientationEventExt =
+          DeviceOrientationEvent as unknown as ExtendedDeviceOrientationEventStatic;
+        if (typeof DeviceOrientationEventExt.requestPermission === 'function') {
+          setShowMotionPermissionButton(true);
+          setStatus('Motion Sensors Required');
+          addStatusDetail('Tap "Allow Motion Sensors" to enable AR features');
+          return;
+        }
       }
 
-      // If we get here with motion permission, we can start AR
-      if (hasMotionPermission) {
-        setIsARSupported(true);
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        setARMode(isIOS ? 'arjs' : 'webxr');
-        addStatusDetail(`✓ Using ${isIOS ? 'AR.js for iOS' : 'WebXR'}`);
-      }
+      // For non-iOS devices or iOS devices without motion permission requirement
+      setIsARSupported(true);
+      setARMode(isIOS ? 'arjs' : 'webxr');
+      void initializeAR();
     } catch (error) {
       setIsARSupported(false);
       setStatus('Initialization Failed');
       addStatusDetail(
         `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-    } finally {
-      initializingRef.current = false;
     }
-  }, [addStatusDetail, clearStatus, checkCameraAccess]);
+  }, [addStatusDetail, clearStatus, initializeAR]);
 
-  // Run initial check only once
+  // Run device support check once on mount
   useEffect(() => {
-    if (!containerRef.current || hasRunInitialCheckRef.current) return;
-    hasRunInitialCheckRef.current = true;
-    void checkARSupport();
-  }, [checkARSupport]);
-
-  // Handle AR initialization when conditions are met
-  useEffect(() => {
-    if (!containerRef.current || initializingRef.current) return;
-    if (isARSupported && arMode && !showMotionPermissionButton) {
-      void initializeAR();
+    if (containerRef.current) {
+      void checkDeviceSupport();
     }
-  }, [isARSupported, arMode, showMotionPermissionButton, initializeAR]);
-
-  // Cleanup on unmount
-  useEffect(() => cleanup, [cleanup]);
+    return cleanup;
+  }, [checkDeviceSupport, cleanup]);
 
   const loadNearbyModels = async (models: ModelMetadata[]) => {
     const arEngine = AREngine.getInstance();
@@ -290,7 +226,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           <button
             className={styles.permissionButton}
             onClick={handleMotionPermissionClick}
-            disabled={initializingRef.current}
           >
             Allow Motion Sensors
           </button>
