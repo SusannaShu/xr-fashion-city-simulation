@@ -117,7 +117,7 @@ export class AREngine {
     }
   }
 
-  private render(timestamp: number, frame: XRFrame | null): void {
+  private render(_timestamp: number, frame: XRFrame | null): void {
     if (frame) {
       const referenceSpace = this.renderer.xr.getReferenceSpace();
       const session = this.renderer.xr.getSession();
@@ -125,19 +125,36 @@ export class AREngine {
       if (referenceSpace && session) {
         // Handle hit testing
         if (!this.hitTestSourceRequested) {
-          void session.requestReferenceSpace('viewer').then(viewerSpace => {
-            if (viewerSpace && session) {
-              void session
-                .requestHitTestSource({ space: viewerSpace })
-                .then(source => {
-                  this.hitTestSource = source;
-                })
-                .catch(error => {
-                  console.error('Error requesting hit test source:', error);
-                });
+          void (async () => {
+            try {
+              if (
+                !session?.requestReferenceSpace ||
+                !session?.requestHitTestSource
+              ) {
+                throw new Error(
+                  'Session does not support required AR features'
+                );
+              }
+
+              const viewerSpace = await session.requestReferenceSpace('viewer');
+              if (!viewerSpace) {
+                throw new Error('Failed to get viewer space');
+              }
+
+              const hitTestSource = await session.requestHitTestSource({
+                space: viewerSpace,
+              });
+
+              if (!hitTestSource) {
+                throw new Error('Failed to create hit test source');
+              }
+
+              this.hitTestSource = hitTestSource;
+            } catch (error) {
+              console.error('Error requesting hit test source:', error);
             }
-          });
-          this.hitTestSourceRequested = true;
+            this.hitTestSourceRequested = true;
+          })();
         }
 
         if (this.hitTestSource) {

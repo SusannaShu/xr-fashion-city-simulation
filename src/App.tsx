@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ARViewer } from './components/ar/ARViewer';
 import { DoodleCanvas } from './components/ar/DoodleCanvas';
 import { MapInterface } from './components/map/MapInterface';
+import { Camera } from 'three';
 import './App.css';
 
 const App: React.FC = () => {
@@ -32,7 +33,7 @@ const App: React.FC = () => {
             // Optionally show error toast here
           }}
         >
-          {camera => <DoodleCanvas camera={camera} />}
+          {(camera: Camera) => <DoodleCanvas camera={camera} />}
         </ARViewer>
       )}
     </div>

@@ -49,10 +49,12 @@ export class LocationService {
 
   private constructor() {
     // Initialize device orientation event listener
-    window.addEventListener(
-      'deviceorientationabsolute',
-      this.handleOrientation.bind(this)
-    );
+    if (typeof window !== 'undefined') {
+      window.addEventListener(
+        'deviceorientation',
+        this.handleOrientation.bind(this)
+      );
+    }
   }
 
   static getInstance(): LocationService {
@@ -221,13 +223,10 @@ export class LocationService {
   private getCurrentOrientation(): Promise<DeviceOrientationEvent> {
     return new Promise(resolve => {
       const handleOrientation = (event: DeviceOrientationEvent) => {
-        window.removeEventListener(
-          'deviceorientationabsolute',
-          handleOrientation
-        );
+        window.removeEventListener('deviceorientation', handleOrientation);
         resolve(event);
       };
-      window.addEventListener('deviceorientationabsolute', handleOrientation, {
+      window.addEventListener('deviceorientation', handleOrientation, {
         once: true,
       });
     });
@@ -235,10 +234,12 @@ export class LocationService {
 
   dispose(): void {
     this.stopTracking();
-    window.removeEventListener(
-      'deviceorientationabsolute',
-      this.handleOrientation.bind(this)
-    );
+    if (typeof window !== 'undefined') {
+      window.removeEventListener(
+        'deviceorientation',
+        this.handleOrientation.bind(this)
+      );
+    }
     this.locationUpdateCallbacks.clear();
     this.orientationUpdateCallbacks.clear();
     this.anchors.clear();

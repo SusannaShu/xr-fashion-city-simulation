@@ -1,31 +1,18 @@
 import { initializeApp } from 'firebase/app';
-import { getStorage } from 'firebase/storage';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getFirestore, Firestore } from 'firebase/firestore';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, Analytics } from 'firebase/analytics';
 
-// Helper function to safely get environment variables
-const getEnvVar = (key: string): string => {
-  const value = import.meta.env[key] || process.env[key];
-  if (!value) {
-    console.warn(`Environment variable ${key} is not set`);
-  }
-  return value || '';
-};
-
-// Debug: Log environment access method
-console.log('Environment access check:', {
-  'import.meta.env': import.meta.env ? 'available' : 'unavailable',
-  'process.env': process.env ? 'available' : 'unavailable',
-});
+const env = import.meta.env;
 
 const firebaseConfig = {
-  apiKey: getEnvVar('VITE_FIREBASE_API_KEY'),
-  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN'),
-  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID'),
-  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: getEnvVar('VITE_FIREBASE_APP_ID'),
-  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID'),
+  apiKey: env.VITE_FIREBASE_API_KEY || '',
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: env.VITE_FIREBASE_APP_ID || '',
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || '',
 };
 
 // Debug: Log the final config object
@@ -42,22 +29,12 @@ if (!firebaseConfig.apiKey) {
   throw new Error('Firebase API Key is not set in environment variables');
 }
 
-let app;
-let storage;
-let db: Firestore;
-let analytics;
-
-try {
-  console.log('Attempting to initialize Firebase with config:', firebaseConfig);
-  app = initializeApp(firebaseConfig);
-  console.log('Firebase initialized successfully');
-  storage = getStorage(app);
-  db = getFirestore(app);
-  analytics = firebaseConfig.measurementId ? getAnalytics(app) : null;
-} catch (error) {
-  console.error('Error initializing Firebase:', error);
-  throw error;
-}
+const app = initializeApp(firebaseConfig);
+const storage: FirebaseStorage = getStorage(app);
+const db: Firestore = getFirestore(app);
+const analytics: Analytics | null = firebaseConfig.measurementId
+  ? getAnalytics(app)
+  : null;
 
 export { app, storage, db, analytics };
 

@@ -1,5 +1,6 @@
 import { storage } from './config';
 import { ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
+import type { StorageReference, FirebaseStorage } from 'firebase/storage';
 import type { ModelData } from './config';
 
 export class StorageService {
@@ -26,9 +27,9 @@ export class StorageService {
     return getDownloadURL(modelRef);
   }
 
-  static async listModels(): Promise<string[]> {
+  static async listModels(): Promise<StorageReference[]> {
     const modelsRef = ref(storage, this.MODELS_PATH);
     const result = await listAll(modelsRef);
-    return result.items.map(item => item.name);
+    return result.items;
   }
 }
