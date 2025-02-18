@@ -55,14 +55,27 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           });
         }
 
-        // Wait for A-Frame to initialize
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        if (mounted) {
-          setIsLoading(false);
-          setIsSceneReady(true);
-          setError(null);
-          onStart?.();
+        // Initialize webcam after A-Frame loads
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+            });
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            // Store video element for cleanup
+            if (mounted) {
+              setIsLoading(false);
+              setIsSceneReady(true);
+              setError(null);
+              onStart?.();
+            }
+          } catch (err) {
+            console.error('Camera access error:', err);
+            setError('Failed to access camera');
+            onError?.(err);
+          }
         }
       } catch (error) {
         console.error('Failed to load A-Frame:', error);
@@ -77,6 +90,14 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
     return () => {
       mounted = false;
+      // Stop all video streams
+      const videoElements = document.getElementsByTagName('video');
+      Array.from(videoElements).forEach(video => {
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+      });
       onEnd?.();
     };
   }, [onStart, onEnd, onError]);
@@ -127,7 +148,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       {isSceneReady && (
         <a-scene
           embedded
-          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
+          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true;"
           vr-mode-ui="enabled: false"
           loading-screen="enabled: false"
         >
@@ -159,9 +180,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             light="type: directional; color: #FFF; intensity: 1.6"
             position="1 1 -1"
           ></a-entity>
-
-          {/* Simple environment */}
-          <a-sky color="#ECECEC"></a-sky>
         </a-scene>
       )}
 
