@@ -142,28 +142,32 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             <a-camera look-controls wasd-controls></a-camera>
           </a-entity>
 
-          {/* Shoe model - monumental sculpture style */}
+          {/* Shoe model - massive sculpture style */}
           <a-entity
-            position="0 2 -8"
-            scale="8 8 8"
+            position="0 -1 -15"
+            scale="19 19 19"
             rotation="0 0 0"
             gltf-model={getModelPath()}
-            animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
+            animation="property: rotation; to: 0 360 0; dur: 40000; easing: linear; loop: true"
             events={{
               error: handleModelError,
               loaded: () => console.log('Model loaded successfully'),
             }}
           ></a-entity>
 
-          {/* Lighting - enhanced for distant model */}
-          <a-entity light="type: ambient; color: #FFF; intensity: 1.8"></a-entity>
+          {/* Lighting - adjusted for better texture visibility */}
+          <a-entity light="type: ambient; color: #FFF; intensity: 0.7"></a-entity>
           <a-entity
-            light="type: directional; color: #FFF; intensity: 2; castShadow: true"
-            position="-1 1 1"
+            light="type: directional; color: #FFF; intensity: 0.8; castShadow: true"
+            position="-1 2 1"
           ></a-entity>
           <a-entity
-            light="type: directional; color: #FFF; intensity: 2"
-            position="1 1 -1"
+            light="type: directional; color: #FFF; intensity: 0.8"
+            position="1 2 -1"
+          ></a-entity>
+          <a-entity
+            light="type: spot; color: #FFF; intensity: 0.5; angle: 45"
+            position="0 8 -10"
           ></a-entity>
         </a-scene>
       )}
@@ -172,27 +176,9 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         ← Back to Map
       </button>
 
-      <div className={styles.instructions}>
+      {/* <div className={styles.instructions}>
         Move around to view the shoe from different angles
-      </div>
-
-      {/* Debug info */}
-      <div
-        className={styles.debug}
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          background: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          padding: '10px',
-          fontSize: '12px',
-        }}
-      >
-        Scene Ready: {isSceneReady ? 'Yes' : 'No'}
-        <br />
-        Model Path: {getModelPath()}
-      </div>
+      </div> */}
     </div>
   );
 };
