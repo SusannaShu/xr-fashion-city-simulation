@@ -39,6 +39,14 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Get the base URL for assets
+  const getModelPath = () => {
+    const isProd = window.location.hostname !== 'localhost';
+    return isProd
+      ? 'https://susu-virtual-space.web.app/models/susanna_heel.glb'
+      : '/models/susanna_heel.glb';
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -121,19 +129,26 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true;"
           vr-mode-ui="enabled: false"
           loading-screen="enabled: false"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+          }}
         >
           {/* Camera setup */}
           <a-entity position="0 1.6 0">
             <a-camera look-controls wasd-controls></a-camera>
           </a-entity>
 
-          {/* Shoe model - even larger */}
+          {/* Shoe model - centered and floating */}
           <a-entity
-            position="0 1.6 -2"
+            position="0 1.6 -3"
             scale="4 4 4"
-            rotation="0 45 0"
-            gltf-model="/models/susanna_heel.glb"
-            animation="property: rotation; to: 0 405 0; dur: 15000; easing: linear; loop: true"
+            rotation="0 0 0"
+            gltf-model={getModelPath()}
+            animation="property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: true"
             events={{
               error: handleModelError,
               loaded: () => console.log('Model loaded successfully'),
@@ -176,7 +191,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       >
         Scene Ready: {isSceneReady ? 'Yes' : 'No'}
         <br />
-        Model Path: /models/susanna_heel.glb
+        Model Path: {getModelPath()}
       </div>
     </div>
   );

@@ -19,6 +19,18 @@
           {
             "key": "Access-Control-Allow-Origin",
             "value": "*"
+          },
+          {
+            "key": "Access-Control-Allow-Methods",
+            "value": "GET, OPTIONS"
+          },
+          {
+            "key": "Access-Control-Allow-Headers",
+            "value": "X-Requested-With, Content-Type, Accept"
+          },
+          {
+            "key": "Cross-Origin-Resource-Policy",
+            "value": "cross-origin"
           }
         ]
       },
@@ -35,7 +47,7 @@
           },
           {
             "key": "Cross-Origin-Embedder-Policy",
-            "value": "require-corp"
+            "value": "credentialless"
           },
           {
             "key": "Cross-Origin-Opener-Policy",
