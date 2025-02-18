@@ -46,7 +46,9 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       try {
         if (!window.AFRAME) {
           await new Promise<void>((resolve, reject) => {
-            const script = document.createElement('script');
+            const script = document.createElement(
+              'script'
+            ) as unknown as HTMLScriptElement;
             script.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
             script.async = true;
             script.onload = () => resolve();
@@ -55,27 +57,14 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           });
         }
 
-        // Initialize webcam after A-Frame loads
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-              video: true,
-            });
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            video.play();
-            // Store video element for cleanup
-            if (mounted) {
-              setIsLoading(false);
-              setIsSceneReady(true);
-              setError(null);
-              onStart?.();
-            }
-          } catch (err) {
-            console.error('Camera access error:', err);
-            setError('Failed to access camera');
-            onError?.(err);
-          }
+        // Wait for A-Frame to initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (mounted) {
+          setIsLoading(false);
+          setIsSceneReady(true);
+          setError(null);
+          onStart?.();
         }
       } catch (error) {
         console.error('Failed to load A-Frame:', error);
@@ -90,14 +79,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
     return () => {
       mounted = false;
-      // Stop all video streams
-      const videoElements = document.getElementsByTagName('video');
-      Array.from(videoElements).forEach(video => {
-        const stream = video.srcObject as MediaStream;
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-      });
       onEnd?.();
     };
   }, [onStart, onEnd, onError]);
