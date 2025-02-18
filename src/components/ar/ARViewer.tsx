@@ -42,12 +42,9 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   // Get the base URL for assets
   const getModelPath = () => {
     const isProd = window.location.hostname !== 'localhost';
-    const modelPath = '/models/susanna_heel.glb';
-    if (isProd) {
-      // Try relative path first
-      return modelPath;
-    }
-    return modelPath;
+    return isProd
+      ? 'https://susu-virtual-space.web.app/models/susanna_heel.glb'
+      : '/models/susanna_heel.glb';
   };
 
   useEffect(() => {
@@ -149,6 +146,12 @@ export const ARViewer: React.FC<ARViewerProps> = ({
               fov="80"
             ></a-camera>
           </a-entity>
+
+          {/* Background - Louvre Courtyard */}
+          <a-sky
+            src="https://images.unsplash.com/photo-1585639850517-3a3cfc71e3b4?auto=format&fit=crop&w=2560&q=80"
+            radius="100"
+          ></a-sky>
 
           {/* Shoe model - massive sculpture style */}
           <a-entity
