@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './ARViewer.module.css';
 
@@ -11,6 +11,10 @@ declare global {
       'a-scene': any;
       'a-entity': any;
       'a-light': any;
+      'a-camera': any;
+      'a-marker': any;
+      'a-assets': any;
+      'a-asset-item': any;
     }
   }
 }
@@ -31,55 +35,75 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   onBack,
 }) => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSceneReady, setIsSceneReady] = useState(false);
 
   useEffect(() => {
-    // Load A-Frame script
+    let mounted = true;
+
     const loadScripts = async () => {
       try {
         // Load A-Frame first
         await new Promise<void>((resolve, reject) => {
-          const aframeScript = document.createElement('script') as any;
-          // Using unpkg CDN which has better CORS support
-          aframeScript.src =
-            'https://unpkg.com/aframe@1.4.0/dist/aframe-master.min.js';
-          aframeScript.crossOrigin = 'anonymous';
-          aframeScript.onload = () => resolve();
-          aframeScript.onerror = e => {
+          const script = document.createElement('script') as HTMLScriptElement;
+          script.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
+          script.async = true;
+          script.onload = () => {
+            if (mounted) {
+              console.log('A-Frame loaded successfully');
+              resolve();
+            }
+          };
+          script.onerror = e => {
             console.error('Failed to load A-Frame:', e);
             reject(new Error('Failed to load A-Frame'));
           };
-          document.head.appendChild(aframeScript);
+          document.head.appendChild(script);
         });
+
+        // Wait a bit for A-Frame to initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Then load AR.js
         await new Promise<void>((resolve, reject) => {
-          const arScript = document.createElement('script') as any;
-          // Using jsDelivr CDN which has better CORS support
-          arScript.src =
-            'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@master/aframe/build/aframe-ar.js';
-          arScript.crossOrigin = 'anonymous';
-          arScript.onload = () => resolve();
-          arScript.onerror = e => {
+          const script = document.createElement('script') as HTMLScriptElement;
+          script.src =
+            'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js';
+          script.async = true;
+          script.onload = () => {
+            if (mounted) {
+              console.log('AR.js loaded successfully');
+              resolve();
+            }
+          };
+          script.onerror = e => {
             console.error('Failed to load AR.js:', e);
             reject(new Error('Failed to load AR.js'));
           };
-          document.head.appendChild(arScript);
+          document.head.appendChild(script);
         });
 
-        // Call onStart when scripts are loaded
-        onStart?.();
+        // Wait for everything to be ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (mounted) {
+          setIsLoading(false);
+          setIsSceneReady(true);
+          onStart?.();
+        }
       } catch (error) {
         console.error('Failed to load AR scripts:', error);
-        onError?.(error);
-        // Navigate back to map view on error
-        navigate('/');
+        if (mounted) {
+          onError?.(error);
+          navigate('/');
+        }
       }
     };
 
     void loadScripts();
 
     return () => {
-      // Cleanup scripts when component unmounts
+      mounted = false;
       const scripts = document.querySelectorAll(
         'script[src*="aframe"], script[src*="ar.js"]'
       );
@@ -96,34 +120,59 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     }
   };
 
+  if (isLoading || !isSceneReady) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingText}>Loading AR Experience...</div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      <a-scene
-        embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-        renderer="logarithmicDepthBuffer: true;"
-        vr-mode-ui="enabled: false"
-        loading-screen="enabled: false"
-      >
-        {/* Camera */}
-        <a-entity camera></a-entity>
-
-        {/* Susanna Shoes Model */}
-        <a-entity
-          gltf-model="/susanna_heel.glb"
-          position="0 0 -1"
-          scale="0.5 0.5 0.5"
-          rotation="0 0 0"
+      {isSceneReady && (
+        <a-scene
+          embedded
+          arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
+          vr-mode-ui="enabled: false"
+          loading-screen="enabled: false"
         >
-          {/* Add ambient light for better visibility */}
-          <a-light type="ambient" color="#ffffff" intensity="1"></a-light>
-        </a-entity>
-      </a-scene>
+          <a-assets>
+            <a-asset-item
+              id="shoe-model"
+              src="/susanna_heel.glb"
+            ></a-asset-item>
+          </a-assets>
 
-      {/* Back button */}
+          <a-marker preset="hiro">
+            <a-entity
+              gltf-model="#shoe-model"
+              position="0 0 0"
+              scale="0.5 0.5 0.5"
+              rotation="-90 0 0"
+            >
+              <a-light type="ambient" color="#ffffff" intensity="1"></a-light>
+              <a-light
+                type="directional"
+                color="#ffffff"
+                intensity="0.6"
+                position="1 1 1"
+              ></a-light>
+            </a-entity>
+          </a-marker>
+
+          <a-entity camera></a-entity>
+        </a-scene>
+      )}
+
       <button className={styles.backButton} onClick={handleBack}>
         ← Back to Map
       </button>
+
+      <div className={styles.instructions}>
+        Point your camera at a Hiro marker to view the 3D model
+      </div>
     </div>
   );
 };
