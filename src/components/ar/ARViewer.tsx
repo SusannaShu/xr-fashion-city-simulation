@@ -12,10 +12,9 @@ declare global {
       'a-entity': any;
       'a-light': any;
       'a-camera': any;
-      'a-assets': any;
-      'a-asset-item': any;
-      'a-sky': any;
       'a-box': any;
+      'a-sky': any;
+      'a-plane': any;
     }
   }
 }
@@ -39,7 +38,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -91,11 +89,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     }
   };
 
-  const handleAssetsLoaded = () => {
-    console.log('Assets loaded successfully');
-    setAssetsLoaded(true);
-  };
-
   const handleModelError = (e: any) => {
     console.error('Model loading error:', e);
     setError('Failed to load 3D model');
@@ -138,46 +131,17 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           vr-mode-ui="enabled: false"
           loading-screen="enabled: false"
         >
-          {/* Camera with webcam background */}
-          <a-entity
-            id="camera"
-            camera
-            position="0 1.6 0"
-            wasd-controls
-            look-controls
-          >
-            <a-entity
-              geometry="primitive: plane; width: 160; height: 90;"
-              material="shader: flat; src: #webcam; transparent: true; opacity: 1"
-              position="0 0 -100"
-              scale="-1 1 1"
-            ></a-entity>
+          {/* Camera setup */}
+          <a-entity position="0 1.6 0">
+            <a-camera look-controls wasd-controls></a-camera>
           </a-entity>
 
-          <a-assets timeout="30000" onLoad={handleAssetsLoaded}>
-            {/* Add webcam video element */}
-            <video
-              id="webcam"
-              autoPlay
-              playsInline
-              style={{ display: 'none' }}
-            ></video>
-
-            {/* 3D model */}
-            <a-asset-item
-              id="shoe-model"
-              src="/models/susanna_heel.glb"
-              response-type="arraybuffer"
-              crossorigin="anonymous"
-            ></a-asset-item>
-          </a-assets>
-
-          {/* Shoe model */}
+          {/* Shoe model - even larger */}
           <a-entity
-            gltf-model="#shoe-model"
-            position="0 0 -2"
-            scale="0.5 0.5 0.5"
+            position="0 1.6 -2"
+            scale="4 4 4"
             rotation="0 45 0"
+            gltf-model="/models/susanna_heel.glb"
             animation="property: rotation; to: 0 405 0; dur: 15000; easing: linear; loop: true"
             events={{
               error: handleModelError,
@@ -185,12 +149,19 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             }}
           ></a-entity>
 
-          {/* Lighting */}
-          <a-entity light="type: ambient; color: #FFF; intensity: 0.8"></a-entity>
+          {/* Lighting - adjusted for larger model */}
+          <a-entity light="type: ambient; color: #FFF; intensity: 1.4"></a-entity>
           <a-entity
-            light="type: directional; color: #FFF; intensity: 1"
-            position="-0.5 1 1"
+            light="type: directional; color: #FFF; intensity: 1.6; castShadow: true"
+            position="-1 1 1"
           ></a-entity>
+          <a-entity
+            light="type: directional; color: #FFF; intensity: 1.6"
+            position="1 1 -1"
+          ></a-entity>
+
+          {/* Simple environment */}
+          <a-sky color="#ECECEC"></a-sky>
         </a-scene>
       )}
 
@@ -199,9 +170,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       </button>
 
       <div className={styles.instructions}>
-        {!assetsLoaded
-          ? 'Loading model...'
-          : 'Move your device to view the shoe from different angles'}
+        Move around to view the shoe from different angles
       </div>
 
       {/* Debug info */}
@@ -218,8 +187,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         }}
       >
         Scene Ready: {isSceneReady ? 'Yes' : 'No'}
-        <br />
-        Assets Loaded: {assetsLoaded ? 'Yes' : 'No'}
         <br />
         Model Path: /models/susanna_heel.glb
       </div>
