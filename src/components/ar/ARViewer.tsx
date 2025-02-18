@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './ARViewer.module.css';
-import { getDownloadURL, ref } from 'firebase/storage';
-import { storage } from '../../services/firebase/config';
 
 // Extend JSX.IntrinsicElements using module augmentation
 /* eslint-disable @typescript-eslint/no-namespace */
@@ -40,34 +38,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [modelUrl, setModelUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadModel = async () => {
-      try {
-        // Get the download URL from Firebase Storage
-        const modelRef = ref(storage, 'models/susanna_heel.glb');
-        const url = await getDownloadURL(modelRef);
-        if (mounted) {
-          setModelUrl(url);
-        }
-      } catch (err) {
-        console.error('Error loading model URL:', err);
-        if (mounted) {
-          setError('Failed to load model URL');
-          onError?.(err);
-        }
-      }
-    };
-
-    void loadModel();
-
-    return () => {
-      mounted = false;
-    };
-  }, [onError]);
 
   useEffect(() => {
     let mounted = true;
@@ -188,7 +158,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     );
   }
 
-  if (isLoading || !isSceneReady || !modelUrl) {
+  if (isLoading || !isSceneReady) {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.loadingText}>Loading AR Experience...</div>
@@ -198,7 +168,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
   return (
     <div className={styles.container}>
-      {isSceneReady && modelUrl && (
+      {isSceneReady && (
         <a-scene
           embedded
           renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
@@ -209,7 +179,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           <a-assets timeout="30000">
             <a-asset-item
               id="shoe-model"
-              src={modelUrl}
+              src="/models/susanna_heel.glb"
               response-type="arraybuffer"
               crossorigin="anonymous"
             ></a-asset-item>
