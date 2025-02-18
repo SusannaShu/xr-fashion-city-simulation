@@ -8,54 +8,56 @@ Minimal implementation of SHEYOU Virtual Space platform, focusing on presenting 
 
 ### Map Interface
 
-- [x] Interactive Mapbox map with 3D buildings
-- [x] Distinctive pink marker for Susanna Heel location
+- [x] Interactive Mapbox map with 3D buildings and grayscale style
+- [x] Distinctive pink marker (30px) for Susanna Heel location
 - [x] Marker popup with model information
-- [x] "View in AR" button appears only when Susanna marker is selected
-- [x] Smooth camera transitions to selected locations
-- [x] Grayscale map style for focus on markers
+- [x] "View in AR" button appears only when Susanna Heel marker is selected
+- [x] Smooth camera transitions (zoom: 19, pitch: 60)
+- [x] Offline mode support with retry mechanism
 
 ### AR Viewer
 
 - [x] Full viewport A-Frame scene
 - [x] Optimized camera settings (80° FOV)
-- [x] Louvre courtyard background
-- [x] Proper model scaling and positioning
-- [x] Smooth model rotation
+- [x] Monumental model presentation (scale: 19, depth: -15)
+- [x] 40-second rotation animation
+- [x] Optimized lighting setup (ambient: 0.7, directional: 0.8, spot: 0.5)
 - [x] Mobile-friendly controls
 
 ## Technical Implementation
 
 ### Map Component
 
-- Light theme Mapbox implementation
+- Light theme Mapbox implementation (light-v11)
 - 3D building layer with 60° pitch
-- Marker system with conditional styling
-- Location-based model discovery
-- Offline mode support
-- Geolocation controls
+- Marker system with hover effects and popups
+- Location-based model discovery with radius calculation
+- Offline mode with 3 retry attempts
+- Geolocation controls with high accuracy
 
 ### AR Component
 
-- A-Frame scene setup
-- Camera controls optimization
-- Background image integration
-- Model loading and positioning
-- Animation system
-- Error handling
+- A-Frame scene setup with logarithmic depth buffer
+- Wasd-controls and look-controls
+- Model positioning at (0, -1, -15)
+- Model scaling at (19, 19, 19)
+- Continuous 360° rotation animation
+- Progressive loading with error handling
 
 ### Model Management
 
 - Firebase-based model metadata service
-- Preloaded model initialization
+- Model path: /dist/models/susanna_heel.glb
+- Preloaded Susanna model initialization
 - Location-based model queries
-- Metadata synchronization
+- Production URL fallback for model loading
+- CORS and content-type headers configuration
 
 ## Development
 
 ```bash
 npm run dev     # Local development
-npm run build   # Production build
+npm run build   # Production build (copies models to dist/models)
 firebase deploy # Deploy to production
 ```
 
@@ -69,8 +71,8 @@ firebase deploy # Deploy to production
 
 ## Dependencies
 
-- React
-- TypeScript
-- A-Frame
-- Mapbox GL
-- Firebase
+- React 17.0.2
+- TypeScript 4.9.5
+- A-Frame 1.4.2
+- Mapbox GL 2.15.0
+- Firebase 9.23.0
