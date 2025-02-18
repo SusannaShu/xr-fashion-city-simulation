@@ -149,7 +149,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
           {/* Background - Louvre Courtyard */}
           <a-sky
-            src="https://images.unsplash.com/photo-1585639850517-3a3cfc71e3b4?auto=format&fit=crop&w=2560&q=80"
+            src="https://api-www.louvre.fr/sites/default/files/2021-01/cour-napoleon-et-pyramide_1.jpg"
             radius="100"
           ></a-sky>
 
