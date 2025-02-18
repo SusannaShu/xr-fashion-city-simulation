@@ -126,7 +126,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       {isSceneReady && (
         <a-scene
           embedded
-          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true;"
+          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: false; colorManagement: true;"
           vr-mode-ui="enabled: false"
           loading-screen="enabled: false"
           style={{
@@ -137,9 +137,20 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             height: '100vh',
           }}
         >
+          {/* Background image */}
+          <a-sky
+            src="https://api-www.louvre.fr/sites/default/files/2021-01/cour-napoleon-et-pyramide_1.jpg"
+            rotation="0 -90 0"
+            radius="100"
+          ></a-sky>
+
           {/* Camera setup */}
           <a-entity position="0 1.6 0">
-            <a-camera look-controls wasd-controls></a-camera>
+            <a-camera
+              look-controls="reverseMouseDrag: false"
+              wasd-controls
+              fov="80"
+            ></a-camera>
           </a-entity>
 
           {/* Shoe model - massive sculpture style */}

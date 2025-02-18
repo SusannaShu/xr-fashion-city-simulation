@@ -2,94 +2,65 @@
 
 ## Overview
 
-This minimal prototype demonstrates the core functionality of the SHEYOU Virtual Space platform, focusing on the 3D model viewing experience in a web browser.
+Minimal implementation of SHEYOU Virtual Space platform, presenting fashion items as monumental digital sculptures in a clean web environment.
 
-## Features Implemented
+## Features
 
-- [x] Basic 3D model viewer using A-Frame
-- [x] Monumental sculpture-style presentation
-- [x] Smooth model rotation animation
-- [x] Responsive full-screen layout
-- [x] Enhanced lighting for better model visibility
-- [x] Cross-platform compatibility (desktop/mobile)
-- [x] Production deployment with CORS and content-type handling
+- [x] Immersive 3D viewer with A-Frame
+- [x] Monumental presentation (19x scale, -15 depth, 40s rotation)
+- [x] Optimized lighting (ambient: 0.7, directional: 0.8, spot: 0.5)
+- [x] Distraction-free UI
+- [x] Production deployment setup
 
-## Technical Implementation
+## Technical Details
 
-### Core Components
+### Core Implementation
 
-- **ARViewer**: Main component handling the 3D viewing experience
-  - Full viewport scene rendering
-  - Model loading and error handling
-  - Camera and lighting setup
-  - Smooth rotation animation
+- **ARViewer**: Main viewing component
+  - Full viewport rendering
+  - Error handling
+  - Camera & lighting setup
+  - Animation system
 
-### Model Display
+### Model Setup
 
-- Position: `0 2 -8` (centered, elevated, distant)
-- Scale: `8 8 8` (monumental size)
-- Rotation: 360° over 30 seconds
-- Lighting:
-  - Ambient light (intensity: 1.8)
-  - Two directional lights (intensity: 2.0)
+- Position & Scale: `0 -1 -15`, `19 19 19`
+- Model deployment: GLB files in `dist/models/` copied to Firebase hosting
+- Lighting: Ambient + 2 Directional + 1 Spot light
 
 ### Deployment
 
-- Firebase Hosting
-- Proper CORS configuration
-- GLB model content-type headers
-- Production URL: https://susu-virtual-space.web.app/ar
+- Firebase hosting with CORS & content-type headers
+- URL: https://susu-virtual-space.web.app/ar
 
-## User Experience
+## Limitations & Next Steps
 
-- Clean, distraction-free interface
-- Simple navigation with back button
-- Clear user instructions
-- Loading and error states handled
-- Smooth model animation
+### Current Limitations
 
-## Current Limitations
+- Single model view
+- Fixed distance
+- No interactions
+- Basic lighting
+- No AR features
 
-- Single model display only
-- Fixed model position and size
-- Basic lighting setup
-- No interaction beyond viewing
-- No AR markers or location-based features yet
+### Next Steps
 
-## Next Steps
+1. Model interactions
+2. AR markers
+3. Environmental effects
+4. Multiple models
+5. User controls
 
-1. Implement AR marker detection
-2. Add model interaction capabilities
-3. Integrate with location services
-4. Add multiple model support
-5. Enhance lighting and shadows
-6. Add environmental effects
-7. Implement user controls for model manipulation
+## Development
 
-## Technical Debt
-
-- Type definitions for A-Frame components need improvement
-- Error handling could be more specific
-- Loading states could be more granular
-- Performance optimization for larger models needed
-- Asset preloading system needed
+```bash
+npm run dev     # Local development
+npm run build   # Build (copies models to dist/models)
+firebase deploy # Deploy to production
+```
 
 ## Dependencies
 
 - A-Frame 1.4.2
 - React 17.0.2
 - TypeScript 4.9.5
-- Firebase Hosting
-
-## Development
-
-```bash
-# Run locally
-npm run dev
-
-# Build for production
-npm run build
-
-# Deploy
-firebase deploy
-```
