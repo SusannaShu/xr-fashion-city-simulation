@@ -42,19 +42,45 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   useEffect(() => {
     let mounted = true;
 
+    const loadScript = async (url: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement(
+          'script'
+        ) as unknown as HTMLScriptElement;
+        script.src = url;
+        script.crossOrigin = 'anonymous';
+        script.onload = () => resolve();
+        script.onerror = () =>
+          reject(new Error(`Failed to load script: ${url}`));
+        document.head.appendChild(script);
+      });
+    };
+
     const loadAFrame = async () => {
       try {
         if (!window.AFRAME) {
-          await new Promise<void>((resolve, reject) => {
-            const script = document.createElement(
-              'script'
-            ) as unknown as HTMLScriptElement;
-            script.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
-            script.async = true;
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error('Failed to load A-Frame'));
-            document.head.appendChild(script);
-          });
+          // Try multiple CDNs in order
+          const cdns = [
+            'https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.0/aframe.min.js',
+            'https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe.min.js',
+            'https://unpkg.com/aframe@1.4.0/dist/aframe.min.js',
+          ];
+
+          let loaded = false;
+          for (const cdn of cdns) {
+            try {
+              await loadScript(cdn);
+              console.log('Successfully loaded A-Frame from:', cdn);
+              loaded = true;
+              break;
+            } catch (err) {
+              console.warn(`Failed to load from ${cdn}, trying next...`);
+            }
+          }
+
+          if (!loaded) {
+            throw new Error('Failed to load A-Frame from all CDNs');
+          }
         }
 
         // Wait for A-Frame to initialize
