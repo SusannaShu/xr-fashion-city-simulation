@@ -174,6 +174,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
           vr-mode-ui="enabled: false"
           loading-screen="enabled: false"
+          arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         >
           <a-assets timeout="30000">
             <a-asset-item
@@ -184,26 +185,23 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             ></a-asset-item>
           </a-assets>
 
-          {/* Camera setup */}
-          <a-entity position="0 1.6 0">
-            <a-camera look-controls wasd-controls></a-camera>
-          </a-entity>
+          {/* Camera setup with AR.js */}
+          <a-entity camera></a-entity>
 
-          {/* Environment setup */}
-          <a-sky color="#ECECEC"></a-sky>
-          <a-entity light="type: ambient; color: #BBB; intensity: 0.5"></a-entity>
+          {/* Shoe model - positioned in front of camera */}
+          <a-entity
+            gltf-model="#shoe-model"
+            position="0 0 -2"
+            scale="0.5 0.5 0.5"
+            rotation="0 45 0"
+            animation="property: rotation; to: 0 405 0; dur: 15000; easing: linear; loop: true"
+          ></a-entity>
+
+          {/* Ambient light for better visibility */}
+          <a-entity light="type: ambient; color: #FFF; intensity: 0.8"></a-entity>
           <a-entity
             light="type: directional; color: #FFF; intensity: 1"
             position="-0.5 1 1"
-          ></a-entity>
-
-          {/* Shoe model */}
-          <a-entity
-            gltf-model="#shoe-model"
-            position="0 1.6 -2"
-            scale="1 1 1"
-            rotation="0 45 0"
-            animation="property: rotation; to: 0 405 0; dur: 15000; easing: linear; loop: true"
           ></a-entity>
         </a-scene>
       )}
@@ -213,7 +211,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       </button>
 
       <div className={styles.instructions}>
-        Move around to view the shoe from different angles
+        Point your camera at an open space to see the shoe model
       </div>
     </div>
   );
