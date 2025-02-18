@@ -142,27 +142,27 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             <a-camera look-controls wasd-controls></a-camera>
           </a-entity>
 
-          {/* Shoe model - centered and floating */}
+          {/* Shoe model - monumental sculpture style */}
           <a-entity
-            position="0 1.6 -3"
-            scale="4 4 4"
+            position="0 2 -8"
+            scale="8 8 8"
             rotation="0 0 0"
             gltf-model={getModelPath()}
-            animation="property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: true"
+            animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
             events={{
               error: handleModelError,
               loaded: () => console.log('Model loaded successfully'),
             }}
           ></a-entity>
 
-          {/* Lighting - adjusted for larger model */}
-          <a-entity light="type: ambient; color: #FFF; intensity: 1.4"></a-entity>
+          {/* Lighting - enhanced for distant model */}
+          <a-entity light="type: ambient; color: #FFF; intensity: 1.8"></a-entity>
           <a-entity
-            light="type: directional; color: #FFF; intensity: 1.6; castShadow: true"
+            light="type: directional; color: #FFF; intensity: 2; castShadow: true"
             position="-1 1 1"
           ></a-entity>
           <a-entity
-            light="type: directional; color: #FFF; intensity: 1.6"
+            light="type: directional; color: #FFF; intensity: 2"
             position="1 1 -1"
           ></a-entity>
         </a-scene>
