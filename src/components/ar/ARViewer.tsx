@@ -41,13 +41,21 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   useEffect(() => {
     let mounted = true;
 
+    const createScript = (src: string): HTMLScriptElement => {
+      const element = document.createElement('script');
+      const script = element as unknown as HTMLScriptElement;
+      script.src = src;
+      script.async = true;
+      return script;
+    };
+
     const loadScripts = async () => {
       try {
         // Load A-Frame first
         await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script') as HTMLScriptElement;
-          script.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
-          script.async = true;
+          const script = createScript(
+            'https://aframe.io/releases/1.4.0/aframe.min.js'
+          );
           script.onload = () => {
             if (mounted) {
               console.log('A-Frame loaded successfully');
@@ -62,14 +70,13 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         });
 
         // Wait a bit for A-Frame to initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Then load AR.js
         await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script') as HTMLScriptElement;
-          script.src =
-            'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js';
-          script.async = true;
+          const script = createScript(
+            'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js'
+          );
           script.onload = () => {
             if (mounted) {
               console.log('AR.js loaded successfully');
