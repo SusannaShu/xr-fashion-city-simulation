@@ -42,9 +42,12 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   // Get the base URL for assets
   const getModelPath = () => {
     const isProd = window.location.hostname !== 'localhost';
-    return isProd
-      ? 'https://susu-virtual-space.web.app/models/susanna_heel.glb'
-      : '/models/susanna_heel.glb';
+    const modelPath = '/models/susanna_heel.glb';
+    if (isProd) {
+      // Try relative path first
+      return modelPath;
+    }
+    return modelPath;
   };
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
   const handleModelError = (e: any) => {
     console.error('Model loading error:', e);
+    console.error('Attempted model path:', getModelPath());
     setError('Failed to load 3D model');
     onError?.(new Error('Failed to load 3D model'));
   };
@@ -137,13 +141,6 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             height: '100vh',
           }}
         >
-          {/* Background image */}
-          <a-sky
-            src="https://api-www.louvre.fr/sites/default/files/2021-01/cour-napoleon-et-pyramide_1.jpg"
-            rotation="0 -90 0"
-            radius="100"
-          ></a-sky>
-
           {/* Camera setup */}
           <a-entity position="0 1.6 0">
             <a-camera
