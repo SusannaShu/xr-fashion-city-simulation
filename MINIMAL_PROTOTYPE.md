@@ -2,65 +2,75 @@
 
 ## Overview
 
-Minimal implementation of SHEYOU Virtual Space platform, presenting fashion items as monumental digital sculptures in a clean web environment.
+Minimal implementation of SHEYOU Virtual Space platform, focusing on presenting the Susanna Heel as a monumental digital sculpture in a clean web environment.
 
-## Features
+## Core Features
 
-- [x] Immersive 3D viewer with A-Frame
-- [x] Monumental presentation (19x scale, -15 depth, 40s rotation)
-- [x] Optimized lighting (ambient: 0.7, directional: 0.8, spot: 0.5)
-- [x] Distraction-free UI
-- [x] Production deployment setup
+### Map Interface
 
-## Technical Details
+- [x] Interactive Mapbox map with 3D buildings
+- [x] Distinctive pink marker for Susanna Heel location
+- [x] Marker popup with model information
+- [x] "View in AR" button appears only when Susanna marker is selected
+- [x] Smooth camera transitions to selected locations
+- [x] Grayscale map style for focus on markers
 
-### Core Implementation
+### AR Viewer
 
-- **ARViewer**: Main viewing component
-  - Full viewport rendering
-  - Error handling
-  - Camera & lighting setup
-  - Animation system
+- [x] Full viewport A-Frame scene
+- [x] Optimized camera settings (80° FOV)
+- [x] Louvre courtyard background
+- [x] Proper model scaling and positioning
+- [x] Smooth model rotation
+- [x] Mobile-friendly controls
 
-### Model Setup
+## Technical Implementation
 
-- Position & Scale: `0 -1 -15`, `19 19 19`
-- Model deployment: GLB files in `dist/models/` copied to Firebase hosting
-- Lighting: Ambient + 2 Directional + 1 Spot light
+### Map Component
 
-### Deployment
+- Light theme Mapbox implementation
+- 3D building layer with 60° pitch
+- Marker system with conditional styling
+- Location-based model discovery
+- Offline mode support
+- Geolocation controls
 
-- Firebase hosting with CORS & content-type headers
-- URL: https://susu-virtual-space.web.app/ar
+### AR Component
 
-## Limitations & Next Steps
+- A-Frame scene setup
+- Camera controls optimization
+- Background image integration
+- Model loading and positioning
+- Animation system
+- Error handling
 
-### Current Limitations
+### Model Management
 
-- Single model view
-- Fixed distance
-- No interactions
-- Basic lighting
-- No AR features
-
-### Next Steps
-
-1. Model interactions
-2. AR markers
-3. Environmental effects
-4. Multiple models
-5. User controls
+- Firebase-based model metadata service
+- Preloaded model initialization
+- Location-based model queries
+- Metadata synchronization
 
 ## Development
 
 ```bash
 npm run dev     # Local development
-npm run build   # Build (copies models to dist/models)
+npm run build   # Production build
 firebase deploy # Deploy to production
 ```
 
+## Next Steps
+
+1. [ ] Enhanced model interactions
+2. [ ] Multiple model support
+3. [ ] Environmental effects
+4. [ ] Advanced AR features
+5. [ ] User customization options
+
 ## Dependencies
 
-- A-Frame 1.4.2
-- React 17.0.2
-- TypeScript 4.9.5
+- React
+- TypeScript
+- A-Frame
+- Mapbox GL
+- Firebase

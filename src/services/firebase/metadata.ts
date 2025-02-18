@@ -40,12 +40,12 @@ export interface ModelMetadata {
 export class ModelMetadataService {
   private static readonly susannaModel: ModelMetadata = {
     id: 'susanna-shoes-preloaded',
-    name: 'Susanna Shoes',
+    name: 'Susanna Heel',
     url: '/models/susanna_heel.glb',
     thumbnailUrl: '',
     creator: 'SHEYOU',
     tags: ['shoes', 'fashion', 'preloaded'],
-    description: 'Floating Susanna Shoes installation above the Louvre',
+    description: 'Floating Susanna Heel installation above the Louvre',
     dimensions: {
       width: 1,
       height: 1,

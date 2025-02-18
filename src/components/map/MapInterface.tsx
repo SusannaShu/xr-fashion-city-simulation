@@ -23,7 +23,7 @@ interface MapInterfaceProps {
 export const MapInterface: React.FC<MapInterfaceProps> = ({
   onMarkerClick,
   onMapClick,
-  selectedModelId,
+  selectedModelId: externalSelectedModelId,
   initialCenter = [2.3364, 48.8612], // Louvre Pyramid coordinates
   initialZoom = 15, // Start with a wider view
 }) => {
@@ -35,6 +35,9 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [selectedModelId, setSelectedModelId] = useState<string | undefined>(
+    externalSelectedModelId
+  );
   const maxRetries = 3;
   const retryDelay = 5000;
   const navigate = useNavigate();
@@ -236,7 +239,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
 
       const markerElement = document.createElement('div');
       markerElement.className =
-        model.name === 'Susanna Shoes' ? styles.susannaMarker : styles.marker;
+        model.name === 'Susanna Heel' ? styles.susannaMarker : styles.marker;
 
       // Create marker at an elevated position for the Susanna model
       const marker = new mapboxgl.Marker({
@@ -260,6 +263,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
         .addTo(map);
 
       marker.getElement().addEventListener('click', () => {
+        console.log('Marker clicked:', model.id, model.name);
         // Fly to the marker with a dramatic zoom animation
         map.flyTo({
           center: [model.location.longitude, model.location.latitude],
@@ -271,19 +275,27 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
         });
 
         marker.togglePopup();
+        setSelectedModelId(model.id);
+        console.log('Setting selectedModelId to:', model.id);
         onMarkerClick?.(model.id);
       });
 
       markers.current.set(model.id, marker);
+      console.log('Added marker for:', model.name, 'with id:', model.id);
     });
   };
 
   // Update selected marker
   useEffect(() => {
+    console.log('selectedModelId changed to:', selectedModelId);
     markers.current.forEach((marker, id) => {
       const element = marker.getElement();
       if (id === selectedModelId) {
         element.classList.add(styles.selected);
+        console.log(
+          'Marker is Susanna?',
+          element.className.includes('susannaMarker')
+        );
       } else {
         element.classList.remove(styles.selected);
       }
@@ -358,9 +370,15 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({
         geolocateControl={geolocateControl.current}
         map={mapInstance.current}
       />
-      <button className={styles.arButton} onClick={() => navigate('/ar')}>
-        👀 View in AR
-      </button>
+      {selectedModelId &&
+        markers.current
+          .get(selectedModelId)
+          ?.getElement()
+          .className.includes('susannaMarker') && (
+          <button className={styles.arButton} onClick={() => navigate('/ar')}>
+            👀 View in AR
+          </button>
+        )}
       {isOffline && (
         <div className={styles.offlineIndicator}>
           <span className={styles.offlineIcon}>📡</span>
