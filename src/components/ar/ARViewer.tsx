@@ -15,6 +15,7 @@ declare global {
       'a-assets': any;
       'a-asset-item': any;
       'a-sky': any;
+      'a-box': any;
     }
   }
 }
@@ -38,65 +39,22 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const createScript = (src: string): HTMLScriptElement => {
-      const element = document.createElement('script');
-      const script = element as unknown as HTMLScriptElement;
-      script.src = src;
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      return script;
-    };
-
-    const loadScripts = async () => {
+    const loadAFrame = async () => {
       try {
-        // Check if A-Frame is already loaded
-        if (window.AFRAME) {
-          console.log('A-Frame already loaded');
-          setIsLoading(false);
-          setIsSceneReady(true);
-          onStart?.();
-          return;
-        }
-
-        // Try loading from multiple CDNs
-        const cdnUrls = [
-          'https://unpkg.com/aframe@1.4.0/dist/aframe-master.min.js',
-          'https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.0/aframe.min.js',
-          'https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe.min.js',
-        ];
-
-        let loaded = false;
-        for (const url of cdnUrls) {
-          if (loaded) break;
-
-          try {
-            await new Promise<void>((resolve, reject) => {
-              const script = createScript(url);
-              script.onload = () => {
-                if (mounted) {
-                  console.log('A-Frame loaded successfully from:', url);
-                  loaded = true;
-                  resolve();
-                }
-              };
-              script.onerror = () => {
-                console.warn('Failed to load A-Frame from:', url);
-                reject(new Error(`Failed to load A-Frame from ${url}`));
-              };
-              document.head.appendChild(script);
-            });
-          } catch (e) {
-            console.warn('Error loading from CDN:', url, e);
-            continue;
-          }
-        }
-
-        if (!loaded) {
-          throw new Error('Failed to load A-Frame from all CDN sources');
+        if (!window.AFRAME) {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://aframe.io/releases/1.4.0/aframe.min.js';
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load A-Frame'));
+            document.head.appendChild(script);
+          });
         }
 
         // Wait for A-Frame to initialize
@@ -110,23 +68,17 @@ export const ARViewer: React.FC<ARViewerProps> = ({
         }
       } catch (error) {
         console.error('Failed to load A-Frame:', error);
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : 'Unknown error loading A-Frame';
-        setError(errorMessage);
         if (mounted) {
+          setError('Failed to load A-Frame');
           onError?.(error);
         }
       }
     };
 
-    void loadScripts();
+    void loadAFrame();
 
     return () => {
       mounted = false;
-      const scripts = document.querySelectorAll('script[src*="aframe"]');
-      scripts.forEach(script => script.remove());
       onEnd?.();
     };
   }, [onStart, onEnd, onError]);
@@ -137,6 +89,17 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     } else {
       navigate('/');
     }
+  };
+
+  const handleAssetsLoaded = () => {
+    console.log('Assets loaded successfully');
+    setAssetsLoaded(true);
+  };
+
+  const handleModelError = (e: any) => {
+    console.error('Model loading error:', e);
+    setError('Failed to load 3D model');
+    onError?.(new Error('Failed to load 3D model'));
   };
 
   if (error) {
@@ -161,7 +124,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   if (isLoading || !isSceneReady) {
     return (
       <div className={styles.loadingContainer}>
-        <div className={styles.loadingText}>Loading AR Experience...</div>
+        <div className={styles.loadingText}>Loading 3D Experience...</div>
       </div>
     );
   }
@@ -174,9 +137,33 @@ export const ARViewer: React.FC<ARViewerProps> = ({
           renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
           vr-mode-ui="enabled: false"
           loading-screen="enabled: false"
-          arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         >
-          <a-assets timeout="30000">
+          {/* Camera with webcam background */}
+          <a-entity
+            id="camera"
+            camera
+            position="0 1.6 0"
+            wasd-controls
+            look-controls
+          >
+            <a-entity
+              geometry="primitive: plane; width: 160; height: 90;"
+              material="shader: flat; src: #webcam; transparent: true; opacity: 1"
+              position="0 0 -100"
+              scale="-1 1 1"
+            ></a-entity>
+          </a-entity>
+
+          <a-assets timeout="30000" onLoad={handleAssetsLoaded}>
+            {/* Add webcam video element */}
+            <video
+              id="webcam"
+              autoPlay
+              playsInline
+              style={{ display: 'none' }}
+            ></video>
+
+            {/* 3D model */}
             <a-asset-item
               id="shoe-model"
               src="/models/susanna_heel.glb"
@@ -185,10 +172,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             ></a-asset-item>
           </a-assets>
 
-          {/* Camera setup with AR.js */}
-          <a-entity camera></a-entity>
-
-          {/* Shoe model - positioned in front of camera */}
+          {/* Shoe model */}
           <a-entity
             gltf-model="#shoe-model"
             position="0 0 -2"
@@ -196,14 +180,12 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             rotation="0 45 0"
             animation="property: rotation; to: 0 405 0; dur: 15000; easing: linear; loop: true"
             events={{
-              error: (e: any) => {
-                console.error('Model loading error:', e);
-                onError?.(new Error('Failed to load 3D model'));
-              },
+              error: handleModelError,
+              loaded: () => console.log('Model loaded successfully'),
             }}
           ></a-entity>
 
-          {/* Ambient light for better visibility */}
+          {/* Lighting */}
           <a-entity light="type: ambient; color: #FFF; intensity: 0.8"></a-entity>
           <a-entity
             light="type: directional; color: #FFF; intensity: 1"
@@ -217,7 +199,29 @@ export const ARViewer: React.FC<ARViewerProps> = ({
       </button>
 
       <div className={styles.instructions}>
-        Point your camera at an open space to see the shoe model
+        {!assetsLoaded
+          ? 'Loading model...'
+          : 'Move your device to view the shoe from different angles'}
+      </div>
+
+      {/* Debug info */}
+      <div
+        className={styles.debug}
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          background: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          padding: '10px',
+          fontSize: '12px',
+        }}
+      >
+        Scene Ready: {isSceneReady ? 'Yes' : 'No'}
+        <br />
+        Assets Loaded: {assetsLoaded ? 'Yes' : 'No'}
+        <br />
+        Model Path: /models/susanna_heel.glb
       </div>
     </div>
   );
