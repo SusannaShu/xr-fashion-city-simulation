@@ -1,3 +1,20 @@
+# XR Fashion City Simulation (GitHub Pages Demo)
+
+This project is a simulation environment for the AR (Augmented Reality) features of the main [SHEYOU Virtual Space application](https://susu-virtual-space.web.app/).
+
+## Purpose
+
+This version is intended for:
+
+- **Public Demonstration:** To showcase the AR interactions and 3D model viewing capabilities on GitHub Pages.
+- **Development & Emulation:** It simulates the experience a user would have when they physically arrive at a designated AR location within the main application.
+
+It is a modified version of the core `virtual_space` codebase, adapted to run as a static site on GitHub Pages and may have certain backend-dependent features (like live Firebase data synchronization) disabled or mocked.
+
+The primary application, with full Firebase integration and live deployment, can be found at [susu-virtual-space.web.app](https://susu-virtual-space.web.app/).
+
+---
+
 # SHEYOU Virtual Space - Mixed Reality Fashion Experiences
 
 ## Overview

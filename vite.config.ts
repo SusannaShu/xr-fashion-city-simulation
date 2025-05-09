@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
+    base: '/xr-fashion-city-simulation/', // Set base path for GitHub Pages
     plugins: [
       react({
         jsxRuntime: 'classic',
