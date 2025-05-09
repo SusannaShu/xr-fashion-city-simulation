@@ -31,11 +31,6 @@ jobs:
       - name: Build project
         # We need to change directory to where package.json is
         run: cd utils/virtual_space_sim && npm run build
-        env:
-          # If your build requires environment variables, set them here
-          # For example, if you have a public base path for GitHub Pages:
-          # VITE_BASE_URL: /${{ github.event.repository.name }}/ # Or your repo name
-          # NODE_ENV: production # Often set by build tools automatically
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
