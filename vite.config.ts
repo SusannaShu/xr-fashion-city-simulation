@@ -8,12 +8,6 @@ export default defineConfig(({ mode }) => {
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
 
-  // Log the environment variable passed from the GitHub Action context
-  console.log(
-    '[Vite Build Step] VITE_MAPBOX_ACCESS_TOKEN from process.env:',
-    process.env.VITE_MAPBOX_ACCESS_TOKEN
-  );
-
   return {
     base: '/xr-fashion-city-simulation/', // Set base path for GitHub Pages
     plugins: [
