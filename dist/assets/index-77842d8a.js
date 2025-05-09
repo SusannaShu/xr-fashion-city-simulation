@@ -11822,7 +11822,7 @@ const yk = '_container_1i8g2_1',
       [I, R] = wt.useState(!0),
       [s, F] = wt.useState(!1),
       [Z, we] = wt.useState(null),
-      ye = () => '/models/susanna_heel.glb';
+      ye = () => '/models/Susanna_heel.glb';
     wt.useEffect(() => {
       let Be = !0;
       return (
@@ -12020,7 +12020,7 @@ var LC = { exports: {} };
                     npm_config_commit_hooks: 'true',
                     npm_config_browser: '',
                     npm_package_gitHead:
-                      '79b2ab49b1626f7a7c834b85e0743b79e962dee1',
+                      '2d968b3742029fd0f509aecc4b41f7151eba2af5',
                     npm_package_devDependencies_prettier: '^2.8.8',
                     npm_config_also: '',
                     npm_config_sign_git_commit: '',
@@ -12031,7 +12031,7 @@ var LC = { exports: {} };
                     npm_config_usage: '',
                     npm_config_audit: 'true',
                     INIT_CWD:
-                      '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space',
+                      '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim',
                     npm_package_devDependencies_typescript: '^4.9.5',
                     NVM_CD_FLAGS: '',
                     npm_config_globalignorefile:
@@ -12120,7 +12120,7 @@ var LC = { exports: {} };
                       '{"remain":[],"cooked":["run","build"],"original":["run","build"]}',
                     npm_package_scripts_lint_fix:
                       'eslint src --ext ts,tsx --fix',
-                    PATH: '/Users/shuxin/.nvm/versions/node/v14.21.3/lib/node_modules/npm/node_modules/npm-lifecycle/node-gyp-bin:/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space/node_modules/.bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Postgres.app/Contents/Versions/latest/bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/Users/shuxin/.rvm/bin:/Users/shuxin/.rvm/bin',
+                    PATH: '/Users/shuxin/.nvm/versions/node/v14.21.3/lib/node_modules/npm/node_modules/npm-lifecycle/node-gyp-bin:/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim/node_modules/.bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Postgres.app/Contents/Versions/latest/bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/Users/shuxin/.rvm/bin:/Users/shuxin/.rvm/bin',
                     npm_config_allow_same_version: '',
                     npm_package_scripts_typecheck: 'tsc --noEmit',
                     npm_config_https_proxy: '',
@@ -12131,7 +12131,7 @@ var LC = { exports: {} };
                     npm_config_init_module: '/Users/shuxin/.npm-init.js',
                     __CFBundleIdentifier: 'com.todesktop.230313mzl4w4u92',
                     npm_config_cidr: '',
-                    PWD: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space',
+                    PWD: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim',
                     npm_config_user: '501',
                     npm_config_node_version: '14.21.3',
                     npm_package_devDependencies_eslint_plugin_react_hooks:
@@ -12151,8 +12151,7 @@ var LC = { exports: {} };
                     npm_config_global: '',
                     npm_config_before: '',
                     npm_package_devDependencies__types_mapbox_gl: '^2.7.19',
-                    npm_package_scripts_build:
-                      'tsc && vite build && ./copy-public.sh',
+                    npm_package_scripts_build: 'tsc && vite build',
                     npm_config_searchstaleness: '900',
                     npm_config_optional: 'true',
                     npm_config_ham_it_up: '',
@@ -12208,8 +12207,7 @@ var LC = { exports: {} };
                     npm_package_scripts_format:
                       'prettier --write "src/**/*.{ts,tsx,css,md}"',
                     LOGNAME: 'shuxin',
-                    npm_lifecycle_script:
-                      'tsc && vite build && ./copy-public.sh',
+                    npm_lifecycle_script: 'tsc && vite build',
                     npm_config_color: 'true',
                     npm_package_dependencies__types_react_router_dom: '^5.3.3',
                     npm_config_proxy: '',
@@ -12253,7 +12251,7 @@ var LC = { exports: {} };
                     npm_config_format_package_lock: 'true',
                     npm_package_devDependencies_eslint_plugin_react: '^7.32.2',
                     COLORTERM: 'truecolor',
-                    _: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space/node_modules/.bin/vite',
+                    _: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim/node_modules/.bin/vite',
                     NODE_ENV: 'production',
                   }.API_URL_REGEX != null
                     ? new RegExp(
@@ -12285,7 +12283,7 @@ var LC = { exports: {} };
                           npm_config_commit_hooks: 'true',
                           npm_config_browser: '',
                           npm_package_gitHead:
-                            '79b2ab49b1626f7a7c834b85e0743b79e962dee1',
+                            '2d968b3742029fd0f509aecc4b41f7151eba2af5',
                           npm_package_devDependencies_prettier: '^2.8.8',
                           npm_config_also: '',
                           npm_config_sign_git_commit: '',
@@ -12296,7 +12294,7 @@ var LC = { exports: {} };
                           npm_config_usage: '',
                           npm_config_audit: 'true',
                           INIT_CWD:
-                            '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space',
+                            '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim',
                           npm_package_devDependencies_typescript: '^4.9.5',
                           NVM_CD_FLAGS: '',
                           npm_config_globalignorefile:
@@ -12389,7 +12387,7 @@ var LC = { exports: {} };
                             '{"remain":[],"cooked":["run","build"],"original":["run","build"]}',
                           npm_package_scripts_lint_fix:
                             'eslint src --ext ts,tsx --fix',
-                          PATH: '/Users/shuxin/.nvm/versions/node/v14.21.3/lib/node_modules/npm/node_modules/npm-lifecycle/node-gyp-bin:/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space/node_modules/.bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Postgres.app/Contents/Versions/latest/bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/Users/shuxin/.rvm/bin:/Users/shuxin/.rvm/bin',
+                          PATH: '/Users/shuxin/.nvm/versions/node/v14.21.3/lib/node_modules/npm/node_modules/npm-lifecycle/node-gyp-bin:/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim/node_modules/.bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Postgres.app/Contents/Versions/latest/bin:/Users/shuxin/Library/Application Support/cloud-code/installer/google-cloud-sdk/bin:/Users/shuxin/.nvm/versions/node/v14.21.3/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Library/Frameworks/Python.framework/Versions/3.10/bin:/Users/shuxin/.rvm/bin:/Users/shuxin/.rvm/bin',
                           npm_config_allow_same_version: '',
                           npm_package_scripts_typecheck: 'tsc --noEmit',
                           npm_config_https_proxy: '',
@@ -12401,7 +12399,7 @@ var LC = { exports: {} };
                           npm_config_init_module: '/Users/shuxin/.npm-init.js',
                           __CFBundleIdentifier: 'com.todesktop.230313mzl4w4u92',
                           npm_config_cidr: '',
-                          PWD: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space',
+                          PWD: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim',
                           npm_config_user: '501',
                           npm_config_node_version: '14.21.3',
                           npm_package_devDependencies_eslint_plugin_react_hooks:
@@ -12422,8 +12420,7 @@ var LC = { exports: {} };
                           npm_config_before: '',
                           npm_package_devDependencies__types_mapbox_gl:
                             '^2.7.19',
-                          npm_package_scripts_build:
-                            'tsc && vite build && ./copy-public.sh',
+                          npm_package_scripts_build: 'tsc && vite build',
                           npm_config_searchstaleness: '900',
                           npm_config_optional: 'true',
                           npm_config_ham_it_up: '',
@@ -12479,8 +12476,7 @@ var LC = { exports: {} };
                           npm_package_scripts_format:
                             'prettier --write "src/**/*.{ts,tsx,css,md}"',
                           LOGNAME: 'shuxin',
-                          npm_lifecycle_script:
-                            'tsc && vite build && ./copy-public.sh',
+                          npm_lifecycle_script: 'tsc && vite build',
                           npm_config_color: 'true',
                           npm_package_dependencies__types_react_router_dom:
                             '^5.3.3',
@@ -12527,7 +12523,7 @@ var LC = { exports: {} };
                           npm_package_devDependencies_eslint_plugin_react:
                             '^7.32.2',
                           COLORTERM: 'truecolor',
-                          _: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/virtual_space/node_modules/.bin/vite',
+                          _: '/Users/shuxin/Desktop/Future_in_Code/Building Fashion Future/utils/virtual_space_sim/node_modules/.bin/vite',
                           NODE_ENV: 'production',
                         }.API_URL_REGEX
                       )
@@ -60581,7 +60577,7 @@ class Gw {
 jk(Gw, 'susannaModel', {
   id: 'susanna-shoes-preloaded',
   name: 'Susanna Heel',
-  url: '/models/susanna_heel.glb',
+  url: '/models/Susanna_heel.glb',
   thumbnailUrl: '',
   creator: 'SHEYOU',
   tags: ['shoes', 'fashion', 'preloaded'],
@@ -66262,4 +66258,4 @@ WI.render(
   ),
   document.getElementById('root')
 );
-//# sourceMappingURL=index-40496b5f.js.map
+//# sourceMappingURL=index-77842d8a.js.map
