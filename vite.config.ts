@@ -8,6 +8,12 @@ export default defineConfig(({ mode }) => {
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
 
+  // Log the environment variable passed from the GitHub Action context
+  console.log(
+    '[Vite Build Step] VITE_MAPBOX_ACCESS_TOKEN from process.env:',
+    process.env.VITE_MAPBOX_ACCESS_TOKEN
+  );
+
   return {
     base: '/xr-fashion-city-simulation/', // Set base path for GitHub Pages
     plugins: [
@@ -39,13 +45,19 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       // Expose env variables
-      'process.env': env,
-      // Make sure import.meta is properly handled
+      'process.env': env, // This makes .env file variables available as process.env.VAR_NAME
+      // Make sure import.meta is properly handled and includes VITE_ prefixed vars
       'import.meta.env': JSON.stringify({
-        ...env,
+        ...env, // Variables loaded by loadEnv (from .env files)
+        // Explicitly add variables passed from the build environment (like GitHub Actions secrets)
+        // if they are prefixed with VITE_ and you want them on import.meta.env
+        VITE_MAPBOX_ACCESS_TOKEN: process.env.VITE_MAPBOX_ACCESS_TOKEN,
+        // Standard Vite env variables
         DEV: mode === 'development',
         PROD: mode === 'production',
         MODE: mode,
+        // Add other VITE_ prefixed variables from process.env if needed
+        // VITE_ANOTHER_VAR: process.env.VITE_ANOTHER_VAR,
       }),
     },
   };
