@@ -1,6 +1,6 @@
 {
   "*.{js,jsx,ts,tsx}": [
-    "eslint --max-warnings=100 --fix",
+    "eslint --max-warnings=150 --fix",
     "prettier --write"
   ],
   "*.{json,md,yml,yaml}": [

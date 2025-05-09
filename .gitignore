@@ -2,6 +2,8 @@
 node_modules
 .pnp
 .pnp.js
+.env
+.gitignore
 
 # Testing
 coverage
@@ -12,9 +14,6 @@ dist
 dist-ssr
 .firebase/
 
-# Environment Variables
-.env
-.env.local
 *.local
 
 # Debug Logs
