@@ -41,10 +41,11 @@ export const ARViewer: React.FC<ARViewerProps> = ({
 
   // Get the base URL for assets
   const getModelPath = () => {
-    const isProd = window.location.hostname !== 'localhost';
-    return isProd
-      ? 'https://susu-virtual-space.web.app/models/susanna_heel.glb'
-      : '/models/susanna_heel.glb';
+    // const isProd = window.location.hostname !== 'localhost';
+    // return isProd
+    //   ? 'https://susu-virtual-space.web.app/models/susanna_heel.glb'
+    //   : '/models/susanna_heel.glb';
+    return '/models/susanna_heel.glb'; // Always use relative path for testing
   };
 
   useEffect(() => {
