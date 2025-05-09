@@ -160,7 +160,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
             position="0 -1 -15"
             scale="19 19 19"
             rotation="0 0 0"
-            gltf-model={getModelPath()}
+            gltf-model={`${getModelPath()}?v=${new Date().getTime()}`}
             animation="property: rotation; to: 0 360 0; dur: 40000; easing: linear; loop: true"
             events={{
               error: handleModelError,
