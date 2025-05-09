@@ -10,7 +10,7 @@ coverage
 
 # Production
 build
-dist
+
 dist-ssr
 .firebase/
 

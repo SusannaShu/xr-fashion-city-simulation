@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      var segmentCount = 1; // Corresponds to /<repository-name>/
+      var l = window.location;
+      sessionStorage.redirect = l.pathname.split('/').slice(0, 1 + segmentCount).join('/') + '/~' + l.search + l.hash;
+      l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+                l.pathname.split('/').slice(0, 1 + segmentCount).join('/') + '/');
+    </script>
+  </head>
+  <body>
+    If you are not redirected automatically, follow <a id="redirect-link" href="#">this link</a>.
+    <script type="text/javascript">
+      document.getElementById('redirect-link').href = sessionStorage.redirect.replace('/~', '?');
+    </script>
+  </body>
+</html> 
