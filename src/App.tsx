@@ -12,7 +12,7 @@ import './App.css';
 
 const App: React.FC = () => {
   return (
-    <Router>
+    <Router basename="/xr-fashion-city-simulation">
       <div className="app-container">
         <Routes>
           {/* Main map view */}
