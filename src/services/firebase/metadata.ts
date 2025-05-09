@@ -41,7 +41,7 @@ export class ModelMetadataService {
   private static readonly susannaModel: ModelMetadata = {
     id: 'susanna-shoes-preloaded',
     name: 'Susanna Heel',
-    url: '/models/susanna_heel.glb',
+    url: '/models/Susanna_heel.glb',
     thumbnailUrl: '',
     creator: 'SHEYOU',
     tags: ['shoes', 'fashion', 'preloaded'],
