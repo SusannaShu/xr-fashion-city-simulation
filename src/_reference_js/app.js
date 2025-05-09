@@ -128,7 +128,7 @@ map.on('style.load', () => {
       // Load the 3D model
       const loader = new GLTFLoader();
       loader.load(
-        '/models/susanna_heel.glb',
+        '/models/Susanna_heel.glb',
         gltf => {
           // Apply simple materials to all meshes
           gltf.scene.traverse(child => {

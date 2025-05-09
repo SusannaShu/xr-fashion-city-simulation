@@ -24,10 +24,10 @@ jobs:
           lfs: true
       - name: Pull LFS files
         run: git lfs pull
-      - name: Check for public/models directory
+      - name: Check for models directory
         run: |
           echo "Current directory: $(pwd)"
-          ls -lR public/models/
+          ls -lR models/
       - name: Install Dependencies
         run: npm install
       - name: Build

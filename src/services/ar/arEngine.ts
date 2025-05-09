@@ -122,7 +122,7 @@ export class AREngine {
 
       // Add the Susanna model directly in front of the camera
       const modelEntity = document.createElement('a-entity');
-      modelEntity.setAttribute('gltf-model', '/models/susanna_heel.glb');
+      modelEntity.setAttribute('gltf-model', '/models/Susanna_heel.glb');
       modelEntity.setAttribute('position', '0 0 -3'); // 3 meters in front
       modelEntity.setAttribute('scale', '2 2 2'); // Life-size scale
       modelEntity.setAttribute('rotation', '0 0 0');
