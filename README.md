@@ -1,5 +1,6 @@
 # XR Fashion City Simulation (GitHub Pages Demo)
 
+live on: https://susannashu.github.io/xr-fashion-city-simulation/(https://susu-virtual-space.web.app/)
 This project is a simulation environment for the AR (Augmented Reality) features of the main [SHEYOU Virtual Space application](https://susu-virtual-space.web.app/).
 
 ## Purpose
