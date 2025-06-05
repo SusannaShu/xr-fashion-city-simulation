@@ -45,7 +45,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
     // return isProd
     //   ? 'https://susu-virtual-space.web.app/models/susanna_heel.glb'
     //   : '/models/susanna_heel.glb';
-    return '/models/Susanna_heel.glb'; // Always use relative path with correct casing
+    return 'https://res.cloudinary.com/sheyou/image/upload/v1749147965/compressed_Susanna_heel_235a465a45.glb'; // Always use relative path with correct casing
   };
 
   useEffect(() => {
