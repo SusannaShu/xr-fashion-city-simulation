@@ -39,7 +39,7 @@ export const ARViewer: React.FC<ARViewerProps> = ({
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get the base URL for assets
+  // Get the base URL for assets 
   const getModelPath = () => {
     // const isProd = window.location.hostname !== 'localhost';
     // return isProd
