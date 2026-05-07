@@ -2,7 +2,7 @@
 export const config = {
   mapbox: {
     accessToken:
-      'pk.eyJ1Ijoic3VzYW5uYXNodSIsImEiOiJjbTZkajNkbWYwb3EyMmlxczdpeDljamxtIn0.0UgPtm1Ag2ai0QbmRszBBg',
+      '***REMOVED_MAPBOX_KEY***',
   },
   firebase: {
     apiKey: 'AIzaSyAUPDWdz5gup52-t3LqoS0F7ltu1tShEyQ',
